@@ -66,6 +66,19 @@ body {
   }
 }
 
+/* Hero Image */
+.hero-image {
+  margin-bottom: 3rem;
+}
+
+.hero-image img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+}
+
 /* Main Content */
 main {
   min-height: 60vh;
