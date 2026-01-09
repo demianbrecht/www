@@ -5,8 +5,10 @@ install:
 	gem install bundler
 	bundle install
 
+BASEURL ?= /demianbrecht.com
+
 build:
-	bundle exec jekyll build
+	bundle exec jekyll build --baseurl "$(BASEURL)"
 
 develop:
 	bundle exec jekyll serve --livereload
