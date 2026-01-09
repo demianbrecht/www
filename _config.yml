@@ -1,0 +1,13 @@
+title: Demian Brecht
+description: Software engineer specializing in Python, backend systems, and open source.
+url: "https://demianbrecht.com"
+baseurl: ""
+
+markdown: kramdown
+permalink: pretty
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - tasks.md
+  - README.md
