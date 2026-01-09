@@ -6,6 +6,9 @@ baseurl: ""
 markdown: kramdown
 permalink: pretty
 
+include:
+  - assets
+
 exclude:
   - Gemfile
   - Gemfile.lock
