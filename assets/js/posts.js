@@ -1,7 +1,7 @@
 (function() {
   const MEDIUM_FEED_URL = 'https://medium.com/feed/@demianbrecht';
   const DEVTO_API_URL = 'https://dev.to/api/articles?username=demianbrecht&per_page=5';
-  const ALLORIGINS_URL = 'https://api.allorigins.win/get?url=';
+  const CORSPROXY_URL = 'https://corsproxy.io/?';
   const MAX_POSTS = 5;
 
   // Add articles here to pin them to the top
@@ -74,11 +74,10 @@
 
   async function fetchMediumPosts() {
     try {
-      const response = await fetch(ALLORIGINS_URL + encodeURIComponent(MEDIUM_FEED_URL));
+      const response = await fetch(CORSPROXY_URL + encodeURIComponent(MEDIUM_FEED_URL));
       if (!response.ok) throw new Error('Medium fetch failed');
 
-      const data = await response.json();
-      const xml = data.contents;
+      const xml = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(xml, 'text/xml');
       const items = doc.querySelectorAll('item');
@@ -294,10 +293,13 @@
       return;
     }
 
-    const [mediumPosts, devtoPosts] = await Promise.all([
+    const results = await Promise.allSettled([
       fetchMediumPosts(),
       fetchDevtoPosts()
     ]);
+
+    const mediumPosts = results[0].status === 'fulfilled' ? results[0].value : [];
+    const devtoPosts = results[1].status === 'fulfilled' ? results[1].value : [];
 
     const allPosts = deduplicateByTitle(
       [...mediumPosts, ...devtoPosts].sort((a, b) => b.date - a.date)
