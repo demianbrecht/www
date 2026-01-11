@@ -10,7 +10,7 @@ BASEURL ?= /demianbrecht.com
 build:
 	bundle exec jekyll build --baseurl "$(BASEURL)"
 
-develop:
+dev:
 	bundle exec jekyll serve --livereload
 
 clean:
