@@ -58,12 +58,6 @@
     }
   }
 
-  function extractMediumImage(item) {
-    const content = item.querySelector('content\\:encoded, encoded')?.textContent || '';
-    const imgMatch = content.match(/<img[^>]+src="([^"]+)"/);
-    return imgMatch ? imgMatch[1] : null;
-  }
-
   function extractMediumPublication(item) {
     const url = item.querySelector('link')?.textContent || '';
     // Match medium.com/publication-name/ or publication.medium.com
@@ -92,7 +86,6 @@
         url: item.querySelector('link')?.textContent || '',
         date: new Date(item.querySelector('pubDate')?.textContent || 0),
         source: 'Medium',
-        image: extractMediumImage(item),
         publication: extractMediumPublication(item)
       }));
     } catch (e) {
@@ -113,7 +106,6 @@
         url: article.url,
         date: new Date(article.published_at),
         source: 'Dev.to',
-        image: article.cover_image || article.social_image || null,
         publication: null
       }));
     } catch (e) {
@@ -143,15 +135,12 @@
     const html = `
       <ul class="posts-list">
         ${posts.map(post => `
-          <li class="post-item${post.image ? ' has-image' : ''}${post.pinned ? ' is-pinned' : ''}">
+          <li class="post-item${post.pinned ? ' is-pinned' : ''}">
             <a href="${post.url}" class="post-link" target="_blank" rel="noopener">
-              ${post.image ? `<div class="post-image"><img src="${post.image}" alt="" loading="lazy"></div>` : ''}
-              <div class="post-content">
-                <div class="post-title">${post.pinned ? pinIcon : ''}${post.title}</div>
-                <div class="post-meta">
-                  <span class="post-date">${formatDate(post.date)}</span>
-                  <span class="post-source">${post.source}${post.publication ? ` / ${post.publication}` : ''}</span>
-                </div>
+              <div class="post-title">${post.pinned ? pinIcon : ''}${post.title}</div>
+              <div class="post-meta">
+                <span class="post-date">${formatDate(post.date)}</span>
+                <span class="post-source">${post.source}${post.publication ? ` / ${post.publication}` : ''}</span>
               </div>
             </a>
           </li>
