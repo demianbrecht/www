@@ -6,6 +6,10 @@ baseurl: ""
 markdown: kramdown
 permalink: pretty
 
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+
 include:
   - assets
 
