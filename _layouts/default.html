@@ -24,7 +24,7 @@
   {% if page.image %}
   <meta property="og:image" content="{{ page.image | absolute_url }}">
   {% else %}
-  <meta property="og:image" content="{{ '/assets/images/vic20.png' | absolute_url }}">
+  <meta property="og:image" content="{{ '/assets/images/vic20.png' | absolute_url }}?v={{ site.time | date: '%s' }}">
   {% endif %}
   
   <!-- Twitter Card -->
@@ -35,7 +35,7 @@
   {% if page.image %}
   <meta name="twitter:image" content="{{ page.image | absolute_url }}">
   {% else %}
-  <meta name="twitter:image" content="{{ '/assets/images/vic20.png' | absolute_url }}">
+  <meta name="twitter:image" content="{{ '/assets/images/vic20.png' | absolute_url }}?v={{ site.time | date: '%s' }}">
   {% endif %}
   
   <!-- Additional SEO -->
@@ -49,8 +49,8 @@
   <meta name="ICBM" content="49.0504, -122.3045">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="{{ '/assets/images/favicon.png' | relative_url }}">
-  <link rel="apple-touch-icon" href="{{ '/assets/images/apple-touch-icon.png' | relative_url }}">
+  <link rel="icon" type="image/png" href="{{ '/assets/images/favicon.png' | relative_url }}?v={{ site.time | date: '%s' }}">
+  <link rel="apple-touch-icon" href="{{ '/assets/images/apple-touch-icon.png' | relative_url }}?v={{ site.time | date: '%s' }}">
   
   <!-- RSS Feed -->
   <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | absolute_url }}">
@@ -84,7 +84,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 </head>
 <body>
   <header class="terminal-header">
@@ -97,7 +97,7 @@
 
   <main>
     {{ content }}
-    <img src="{{ '/assets/images/clueless.webp' | relative_url }}" alt="" class="footer-image" style="display: block; margin: 0 auto;">
+    <img src="{{ '/assets/images/clueless.webp' | relative_url }}?v={{ site.time | date: '%s' }}" alt="" class="footer-image" style="display: block; margin: 0 auto;">
   </main>
 
   <footer>
@@ -120,6 +120,6 @@
   </footer>
 
 
-  <script src="{{ '/assets/js/posts.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/posts.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 </body>
 </html>
