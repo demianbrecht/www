@@ -97,10 +97,12 @@
 
   <main>
     {{ content }}
+    <img src="{{ '/assets/images/clueless.webp' | relative_url }}" alt="" class="footer-image" style="display: block; margin: 0 auto;">
   </main>
 
   <footer>
     <div class="links">
+      <a href="https://keybase.io/demianbrecht" target="_blank" rel="me noopener">Keybase</a>
       <a href="https://github.com/demianbrecht" target="_blank" rel="me noopener">GitHub</a>
       <a href="https://www.linkedin.com/in/demianbrecht/" target="_blank" rel="me noopener">LinkedIn</a>
       <a href="https://medium.com/@demianbrecht" target="_blank" rel="me noopener">Medium</a>
@@ -116,6 +118,7 @@
       <span class="copyright">&copy; {{ 'now' | date: '%Y' }}</span>
     </div>
   </footer>
+
 
   <script src="{{ '/assets/js/posts.js' | relative_url }}"></script>
 </body>

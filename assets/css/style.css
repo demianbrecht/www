@@ -99,6 +99,18 @@ main {
   margin-bottom: 0;
 }
 
+.intro a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-accent);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.intro a:hover {
+  color: var(--color-text);
+  border-bottom-color: var(--color-text);
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
