@@ -3,11 +3,15 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
+import type { ImageMetadata } from 'astro';
+
 interface Props {
   title?: string;
   description?: string;
   type?: 'website' | 'article';
   publishedDate?: Date;
+  /** Social-card image; rendered as an absolute og:image / twitter:image. */
+  image?: ImageMetadata;
   /** Set by Astro when a Markdown/MDX page uses this via `layout:`. */
   frontmatter?: { title?: string; description?: string };
 }
@@ -17,13 +21,13 @@ const { frontmatter, ...props } = Astro.props;
 // MDX pages pass their frontmatter as one prop; .astro callers pass props directly.
 const title = props.title ?? frontmatter?.title;
 const description = props.description ?? frontmatter?.description;
-const { type, publishedDate } = props;
+const { type, publishedDate, image } = props;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead {title} {description} {type} {publishedDate} />
+    <BaseHead {title} {description} {type} {publishedDate} {image} />
   </head>
   <body>
     <a class="skip-link" href="#main">skip to content</a>

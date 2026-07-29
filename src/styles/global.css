@@ -395,6 +395,15 @@ main {
   margin: 0 0 1rem;
 }
 
+.hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .prose > :first-child { margin-top: 0; }
 
 .draft-banner {
