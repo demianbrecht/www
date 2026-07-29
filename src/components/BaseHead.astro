@@ -26,9 +26,14 @@ const {
 const pageTitle = title ? `${title} — ${SITE_TITLE}` : `${SITE_TITLE} — ${SITE_DESCRIPTION}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 
-// og:image must be an absolute URL; getImage yields a built, site-relative path.
+// Social cards want a fixed 1200x630 (1.91:1); cover-crop the source to that
+// so every platform renders a consistent large-image preview. og:image must be
+// an absolute URL; getImage yields a built, site-relative path.
 const ogImage = image
-  ? new URL((await getImage({ src: image, width: 1200 })).src, Astro.site)
+  ? new URL(
+      (await getImage({ src: image, width: 1200, height: 630, fit: 'cover', position: 'center' })).src,
+      Astro.site,
+    )
   : undefined;
 ---
 
@@ -56,7 +61,13 @@ const ogImage = image
 <meta property="og:title" content={title ?? SITE_TITLE} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />
-{ogImage && <meta property="og:image" content={ogImage} />}
+{ogImage && (
+  <>
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+  </>
+)}
 {publishedDate && (
   <meta property="article:published_time" content={publishedDate.toISOString()} />
 )}
