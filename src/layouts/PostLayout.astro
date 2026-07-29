@@ -17,6 +17,17 @@ const { title, description, pubDate, updatedDate, tags, draft, heroImage, heroIm
 <BaseLayout {title} {description} type="article" publishedDate={pubDate} image={heroImage}>
   <div class="wrap">
     <article>
+      {heroImage && (
+        <Image
+          class="hero-image"
+          src={heroImage}
+          alt={heroImageAlt ?? title}
+          widths={[480, 800, 1200]}
+          sizes="(max-width: 800px) 100vw, 800px"
+          loading="eager"
+        />
+      )}
+
       <header class="post-header">
         {draft && (
           <div class="draft-banner">
@@ -45,17 +56,6 @@ const { title, description, pubDate, updatedDate, tags, draft, heroImage, heroIm
           </div>
         )}
       </header>
-
-      {heroImage && (
-        <Image
-          class="hero-image"
-          src={heroImage}
-          alt={heroImageAlt ?? title}
-          widths={[480, 800, 1200]}
-          sizes="(max-width: 800px) 100vw, 800px"
-          loading="eager"
-        />
-      )}
 
       <div class="prose">
         <slot />
