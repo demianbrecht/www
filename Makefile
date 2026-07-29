@@ -1,4 +1,4 @@
-# braindance — build and preview
+# www — build and preview
 #
 # Common targets:
 #   make run        start the dev server with live reload (alias: dev)
