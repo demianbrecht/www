@@ -1,4 +1,4 @@
-# braindance
+# www
 
 A personal blog. Static site built with [Astro](https://astro.build), posts
 authored in MDX, deployed to GitHub Pages under the custom domain
