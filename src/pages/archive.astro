@@ -1,0 +1,47 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isVisible, byNewest, postUrl, isoDate } from '../utils';
+
+const posts = (await getCollection('posts', isVisible)).sort(byNewest);
+
+// Group into [year, posts] pairs, preserving newest-first order.
+const byYear = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.pubDate.getUTCFullYear();
+  const bucket = byYear.get(year);
+  if (bucket) bucket.push(post);
+  else byYear.set(year, [post]);
+}
+const years = [...byYear.entries()];
+
+const monthDay = (d: Date) =>
+  d.toLocaleDateString('en-CA', { month: 'short', day: '2-digit', timeZone: 'UTC' });
+---
+
+<BaseLayout title="Archive" description="Every post, by year.">
+  <div class="wrap">
+    <h1>Archive</h1>
+    <p class="label">{posts.length} {posts.length === 1 ? 'entry' : 'entries'}</p>
+
+    {years.length === 0 ? (
+      <p class="empty-state">No posts yet.</p>
+    ) : (
+      years.map(([year, entries]) => (
+        <section>
+          <h2 class="archive-year">{year}</h2>
+          <ul class="archive-list">
+            {entries.map((post) => (
+              <li>
+                <time datetime={isoDate(post.data.pubDate)}>
+                  {monthDay(post.data.pubDate)}
+                </time>
+                <a href={postUrl(post.id)}>{post.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    )}
+  </div>
+</BaseLayout>

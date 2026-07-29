@@ -1,0 +1,27 @@
+---
+import { SITE_TITLE, NAV_LINKS } from '../consts';
+import { url } from '../utils';
+
+/** Current path with base and trailing slash stripped, for nav highlighting. */
+const current =
+  Astro.url.pathname.replace(import.meta.env.BASE_URL, '').replace(/\/$/, '') || '/';
+---
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href={url('/')}>{SITE_TITLE}</a>
+    <nav class="site-nav" aria-label="Main">
+      {NAV_LINKS.map(({ href, label }) => {
+        const target = href.replace(/\/$/, '') || '/';
+        const isCurrent = target === '/'
+          ? current === '/'
+          : current === target || current.startsWith(`${target}/`);
+        return (
+          <a href={url(href)} aria-current={isCurrent ? 'page' : undefined}>
+            {label}
+          </a>
+        );
+      })}
+    </nav>
+  </div>
+</header>

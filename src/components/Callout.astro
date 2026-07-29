@@ -1,0 +1,28 @@
+---
+interface Props {
+  /** Visual tone. Drives the accent colour and default icon/title. */
+  type?: 'info' | 'warn' | 'danger' | 'success';
+  /** Overrides the default uppercase title; pass an empty string to hide it. */
+  title?: string;
+}
+
+const { type = 'info', title } = Astro.props;
+
+const TONES = {
+  info:    { color: 'var(--accent)',          icon: 'i', label: 'note' },
+  warn:    { color: 'var(--status-warn)',     icon: '!', label: 'warning' },
+  danger:  { color: 'var(--status-danger)',   icon: '!', label: 'important' },
+  success: { color: 'var(--status-success)',  icon: '✓', label: 'confirmed' },
+} as const;
+
+const tone = TONES[type] ?? TONES.info;
+const heading = title ?? tone.label;
+---
+
+<aside class="callout" style={`--callout-accent: ${tone.color}`}>
+  <span class="callout-icon" aria-hidden="true">{tone.icon}</span>
+  <div class="callout-body">
+    {heading && <div class="callout-title">{heading}</div>}
+    <slot />
+  </div>
+</aside>

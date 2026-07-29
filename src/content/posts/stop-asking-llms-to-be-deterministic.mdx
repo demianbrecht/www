@@ -1,0 +1,159 @@
+---
+title: 'Stop Asking LLMs to Be Deterministic'
+description: >-
+  LLMs are stochastic by design. Reliable agent workflows come from surrounding that chaos with deterministic code, not from wishing the model were predictable.
+pubDate: 2026-04-21
+tags: ['ai', 'automation', 'opensource', 'python']
+draft: false
+---
+
+### How to build reliable agent workflows by surrounding chaos with code.
+
+![Switchplane](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/1jmltql54dfqfxlv5xav.png)
+
+I’ve been using agents for software development. You’ve been using agents. We’ve all been using agents. And we should be. They’re awesome. The things that you can not only accomplish but learn are absolutely fantastic.
+
+Month-long development efforts can turn into weekend hack projects. The bar to meaningfully contribute to projects you’re unfamiliar with has been dramatically reduced. The opportunity to learn about new codebases (or even features of a programming language you have deep expertise in) is unlike any Stack Overflow thread I’ve ever encountered. Yes, AI agents and development are awesome.
+
+Until they’re not.
+
+## The seams are starting to show
+“You’re right! I apologize, I should have…”
+
+When you start relying on models to execute crucial tasks that absolutely require deterministic behaviour, it becomes a much larger problem.
+
+I’ve distilled the problems I keep running into down to four, and for each one, I’ve arrived at a principle for solving it.
+
+### Non-determinism → Guaranteed determinism
+Non-deterministic behaviour is precisely what we pay money for: models that reason in a human fashion. But in modelling human reasoning, they’ve also adopted the ability to skip steps, forget, or do things in unexpected ways. That’s fine in deep pair programming sessions. Not so much when you’re betting your service uptime on them getting things right.
+
+**The principle**: When I need something to execute in a predictable way, I need that to be guaranteed. I don’t want to cross my fingers and hope.
+
+### Cost → Use the right tool for the job
+Would you hire a team of expensive contractors to flip a light switch on? I didn’t think so. Neither would I. So why are we doing that with our developer tools and workflows?
+
+There’s a trend where throwing the kitchen sink at a model is The Way. I’ve seen SKILLS files that contain bash or Python scripts, asking the LLM to interpret them. We’re asking a non-deterministic system to behave deterministically and incurring huge compute cost to run something that could take microseconds and cost nothing in the appropriate environment.
+
+**The principle**: LLMs should be used when judgment is actually required. Everything else should execute as code: microseconds instead of API calls, at zero marginal cost.
+
+### The black box → Auditability and testability
+We’ve traded debuggable pipelines for a massive, opaque black box. Instead of writing structured logic, we’re shoving monolithic markdown prompts into a model and praying the right result pops out the other side. When it fails, our only troubleshooting step is tweaking the prompt and rolling the dice again. We’ve lost stack traces, regression tests, and step-by-step logs. We have zero visibility into how the system arrived at its answer.
+
+**The principle**: Agent workflows should be as observable and testable as any standard software system. I want to assert outputs, catch regressions, read execution logs, and pinpoint exactly where a failure occurred, not just stare at a bad output and wonder why.
+
+### Provider lock-in → Vendor independence
+The power players have rapidly evolved, as has the local-first model ecosystem. What’s hot this month may be overtaken next month. All the effort expended adopting one system may be invalidated. Entire lift-and-shifts may be needed to chase the latest trends.
+
+There are also geopolitical tensions at play. The AI economy is massive, and there are real-world examples of providers being blackballed, leaving companies scrambling for solutions.
+
+**The principle**: I want to run the exact same workflow with a public paid model alongside an open source model on my local system. I want to use different models for different tasks within the same overarching workflow. And I want to plug in external tool servers without rewriting my agent code. I need agility.
+
+## There’s a better way, and it’s not new
+The answers don’t lie in writing better markdown files. They also don’t lie in abandoning LLMs entirely. They lie somewhere in the middle. And the approach is one we’ve been using for decades: software engineering.
+
+Before we get into how, let’s make sure we’re on the same page about what determinism means:
+
+“The same starting state and set of inputs will always produce the identical output and final state.”
+
+Keep that definition in mind. Now let’s look at a real example.
+
+## Case study: The ops review
+Working example: https://github.com/salesforce-misc/switchplane/tree/main/examples/devops
+
+Imagine a weekly ops review that pulls service metrics, runs statistical analysis, and produces an executive summary. Let’s look at what it actually takes:
+
+Fetch metrics. Pull request rates by endpoint, response time percentiles, status codes. This is an API call. It’s deterministic.
+Analyze trends. Compute week-over-week deltas, error rate changes, z-score spike detection to find anomalous windows. This is pandas and statistics. It’s deterministic.
+Summarize findings. Interpret the pre-computed statistics and classify anomalies into an executive summary. This requires judgment. This is the LLM.
+Compile report. Format the summary into a structured report. This is string formatting. It’s deterministic.
+Four nodes. Three are pure code. One calls an LLM.
+
+Here’s what the analysis finds, deterministically, at zero LLM cost:
+
+Payment endpoint 500s spiked Wednesday 14:00–16:59 UTC (z-scores 6.8–7.7)
+5xx error rate for /api/payments up from 1.50% → 1.95% WoW (Week over Week)
+Order endpoint p99 latency peaked at 1949ms (prev week: 742ms)
+Global HTTP 500/503 volume up ~7% WoW
+The LLM’s only job: interpret these pre-computed statistics into an executive summary with anomaly classification. One API call. ~5K input tokens. ~$0.02.
+
+That’s the ratio we should be aiming for. The statistical analysis, the spike detection, the report formatting. None of that needs to touch a model. It’s deterministic work. Code does it better, faster, and for free.
+
+Now imagine the alternative: handing the raw metrics CSV to an LLM and asking it to “find anomalies and write a report.” You’d be paying for a model to do arithmetic it’s bad at, hoping it notices the z-score spikes that pandas finds instantly, and getting a different answer every time you run it.
+
+## So I built a thing
+Switchplane is my (early-stage, actively developed) answer to these problems. It is a Python runtime control plane for your agent tasks that turns each app you build into a standalone command-line tool with its own isolated runtime. While you use LangGraph to define the deterministic flow, Switchplane provides the features that let you operate it in production: a daemonized supervisor, persistent task state (via SQLite checkpointing), and an interactive CLI/TUI for operational control. This is the value proposition: a managed, durable, and observable execution environment for your agent graphs.
+
+Because your workflow is a graph of functions, the LLM is just one pluggable node. Switch providers without rewriting your pipeline.
+
+For those unfamiliar with LangGraph, it is a Python framework that lets you define workflows as directed graphs of functions. The framework guarantees execution order and handles state passing between nodes.
+
+Language models are fundamentally non-deterministic. That’s not a bug; it’s the feature you’re paying for. The better approach: let the LLM be non-deterministic where it’s useful, and enforce deterministic properties around it. Your task graph can branch unpredictably. The runtime’s behaviour should not.
+
+## What it looks like
+Here’s the ops review as a Switchplane task. The graph definition wires together three deterministic functions and one LLM call:
+
+```python
+def _build_graph(llm) -> StateGraph:
+    graph = StateGraph(ReviewState)
+    graph.add_node("fetch_metrics", fetch_metrics) # deterministic
+    graph.add_node("analyze_metrics", analyze_metrics) # deterministic
+    graph.add_node("summarize", summarize) # ← the ONE LLM call
+    graph.add_node("compile_report", compile_report) # deterministic
+
+    graph.add_edge(START, "fetch_metrics")
+    graph.add_edge("fetch_metrics", "analyze_metrics")
+    graph.add_edge("analyze_metrics", "summarize")
+    graph.add_edge("summarize", "compile_report")
+    graph.add_edge("compile_report", END)
+
+    return graph
+
+class ReviewTask(Task):
+    name = "review"
+    description = "Weekly ops review"
+
+    async def run(self, ctx: AgentContext) -> None:
+
+        # Any LangChain-compatible LLM — swap providers without touching the graph
+        llm = build_llm(model, api_key)
+        graph = _build_graph(llm).compile()
+    
+        # initial_state is the starting state object for the graph
+        result = await graph.ainvoke(initial_state)
+        ctx.complete(result["report"])
+```
+
+Run it:
+
+```console
+$ devops run sre review
+[14:23:01] Fetching metrics… # deterministic
+[14:23:03] Analyzing trends (pandas + z-scores) # deterministic
+[14:23:04] Generating summary… # LLM (one call, ~$0.02)
+[14:23:09] Compiling report… # deterministic
+[14:23:09] Task completed
+=== Weekly Ops Review ===
+  Executive Summary:
+  Payment processing experienced a significant reliability incident on Wednesday 
+  afternoon (14:00–17:00 UTC), with 5xx error rates spiking to z-scores of
+  6.8–7.7 above baseline…
+```
+
+The graph guarantees every step executes, in order. The deterministic nodes produce the same output every time. And you can unit test them, because they’re just functions.
+
+## What Switchplane provides
+Resumable workflows that survive process restarts via LangGraph checkpointing
+Process isolation: all user code runs in supervised subprocesses, not inline
+Bidirectional IPC to running tasks: send commands and receive events mid-flight
+Operational control from a CLI: start, stop, inspect, cancel, resume
+MCP integration for plugging external tool servers into your agents with managed lifecycle and OAuth support
+An interactive TUI for managing tasks in a full-screen terminal UI
+
+## Get Started:
+
+`pip install switchplane`
+⭐ [Star the project on GitHub](https://github.com/salesforce-misc/switchplane)
+
+Switchplane is for developers building local, long-running agent workflows who want process supervision, durable task state, and CLI operability without adopting a cloud platform. If you’re writing agents that coordinate real work (file operations, API calls, data pipelines, code generation) and you want to operate them from a terminal, this is for you.
+
+And let’s stop asking LLMs to flip light switches.

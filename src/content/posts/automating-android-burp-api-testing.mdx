@@ -1,0 +1,97 @@
+---
+title: 'Automating Android Burp API Testing (Because Rebuilding This Sucks)'
+description: >-
+  Reproducing Android-to-API security findings means juggling emulators, certificates, and proxy config you touch a few times a year. Here's how I automated the setup away.
+pubDate: 2026-02-06
+tags: ['android', 'security', 'api', 'automation']
+draft: false
+---
+
+Reproducing mobile security findings is one of those tasks that sounds trivial until you actually try to do it.
+
+Desktop traffic? Easy.
+
+Android → API → Burp? Suddenly you’re juggling emulators, system certificates, proxy configuration, and half-remembered setup steps you only touch a few times a year.
+
+If you’re primarily a backend engineer, this usually means losing time just getting to the point where you can see the traffic, let alone reason about the bug.
+
+I got tired of rebuilding the same fragile setup, so I automated it.
+
+**The problem**
+
+When a security researcher reports an issue involving a mobile client, validating it often requires recreating an environment you don’t normally live in.
+
+On paper, the setup is straightforward:
+
+- Android emulator
+- Burp Suite acting as a man-in-the-middle
+- Burp CA installed into the system trust store
+- Emulator traffic routed through Burp
+- Requests flowing into your API
+
+In practice:
+
+- Emulator images behave differently
+- Cert installation is easy to get wrong
+- HTTPS breaks silently
+- You end up debugging the tooling instead of the issue
+
+None of this is hard. It’s just annoying, fragile, and repetitive.
+
+**The goal**
+
+I wanted something that would:
+
+Get me from “report received” to “inspectable HTTPS traffic” quickly
+
+- Require minimal Android knowledge
+- Be repeatable and disposable
+- Let me focus on validating the issue, not the plumbing
+
+That’s it. No grand framework. Just removing friction from a recurring workflow.
+
+**What android-burp does**
+
+android-burp automates standing up an Android emulator wired through Burp Suite into your API.
+
+Specifically, it handles:
+
+- Provisioning an Android emulator
+- Installing Burp’s CA certificate into the system trust store
+- Routing emulator traffic through Burp
+- Getting you to inspectable HTTPS traffic with minimal ceremony
+
+The intent is not to replace understanding how this works — it’s to avoid re-learning it every single time.
+
+**A note on AI assistance**
+
+I’m a backend engineer by trade, not a mobile specialist.
+
+This project was built with heavy AI assistance while working through unfamiliar Android internals. Not as a replacement for understanding, but as a force multiplier for:
+
+- Exploring tooling quickly
+- Validating assumptions
+- Iterating without spending days in docs
+
+The result is something that’s already paid for itself in saved time.
+
+**Who this is for**
+
+This will probably be useful if you:
+
+- Work on APIs that have mobile clients
+- Validate security reports involving Android apps
+- Don’t want to become an Android expert just to reproduce an issue
+- Are tired of rebuilding the same setup from scratch
+
+If you live in mobile tooling every day, this might feel boring.
+
+If you don’t — it’s a relief.
+
+**The repo**
+
+The project is fully open source here:
+
+https://github.com/salesforce-misc/android-burp
+
+Feedback, issues, and PRs are welcome. If it saves someone else from the same yak-shaving, it’s done its job.

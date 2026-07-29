@@ -1,0 +1,23 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+import { isVisible, byNewest } from '../../utils';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = (await getCollection('posts', isVisible)).sort(byNewest);
+
+  // Sorted newest-first: index+1 is older, index-1 is newer.
+  return posts.map((post, i) => ({
+    params: { id: post.id },
+    props: { post, prev: posts[i + 1], next: posts[i - 1] },
+  }));
+};
+
+const { post, prev, next } = Astro.props;
+const { Content } = await render(post);
+---
+
+<PostLayout {post} {prev} {next}>
+  <Content />
+</PostLayout>

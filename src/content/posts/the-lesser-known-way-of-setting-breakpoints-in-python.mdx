@@ -1,0 +1,169 @@
+---
+title: 'The lesser known (but incredibly useful) way of settings breakpoints in Python'
+description: >-
+  You don't have to edit your source to set a Python breakpoint. Running your script through the pdb shell lets you break by line or function without touching the code.
+pubDate: 2020-03-03
+tags: ['python', 'productivity']
+draft: false
+---
+
+Everyone knows that in order to set a breakpoint in Python you need to modify your source code with the somewhat unintuitive
+
+``` py
+import pdb; pdb.set_trace()
+
+# or if >= 3.7
+breakpoint() 
+```
+
+Right?
+
+**But**
+
+Did you know that there's a way to set breakpoints that _doesn't_ involve modifying your code?
+
+_"What's this silliness you speak of?"_ you say?
+
+There may be times when you have to jump through ridiculous hoops in order to modify code[^1] and the more common method of setting breakpoints in Python isn't worthwhile. For those cases, you have the ability to run your code interactively through a `pdb` shell:
+
+```
+python -m pdb <script>.py
+```
+
+That's right, `pdb` can be run as an executable module! Neat-o, right? Now you'll be dropped into the `pdb` shell, from which you can run your usual `pdb` commands (`n`ext, `l`ist, `c`ontinue, etc). For our particular use case however, the most interesting and useful command is `b`reak:
+
+``` 
+    b(reak) [ ([filename:]lineno | function) [, condition] ]
+            Without argument, list all breaks.
+    
+            With a line number argument, set a break at this line in the
+            current file.  With a function name, set a break at the first
+            executable line of that function.  If a second argument is
+            present, it is a string specifying an expression which must
+            evaluate to true before the breakpoint is honored.
+    
+            The line number may be prefixed with a filename and a colon,
+            to specify a breakpoint in another file (probably one that
+            hasn't been loaded yet).  The file is searched for on
+            sys.path; the .py suffix may be omitted.
+```
+
+The `b`reak command is incredibly flexible. You can specify breakpoint locations by line number (prefixing it with a filename is optional), by function and even slap on a condition.
+
+As an example, consider the following `example.py`:
+
+``` py
+import requests
+
+def foo():
+    print('foo')
+
+def bar(value='bar'):
+    print(value)
+
+def get():
+    print(requests.get('https://example.com/'))
+
+if __name__ == '__main__':
+    foo()
+    bar()
+    bar(value='foo')
+    get()
+
+```
+
+### Setting a breakpoint with (filename):lineno
+
+This can be useful when we know the exact file and line we want to break execution at. This can be really useful if you want to break into the debugger shell at import time rather than execution (debugging circular references, etc).
+
+``` py
+$ python -m pdb example.py 
+> /home/dbrecht/src/p/playground/example.py(1)<module>()
+-> import requests
+(Pdb) b example.py:5
+Breakpoint 1 at /home/dbrecht/src/p/playground/example.py:5
+(Pdb) c
+> /home/dbrecht/src/p/playground/example.py(5)foo()
+-> print('foo')
+
+```
+
+### Setting a breakpoint by function
+
+This is generally the easiest way to set breakpoints, especially when dealing with dependencies. For this example, let's say we already know that `requests.get` eventually calls into `requests.request` and we want to stop at that point rather than having to step through preamble code in `requests.get`:
+
+``` py
+$ python -m pdb example.py 
+> /home/dbrecht/src/p/playground/example.py(1)<module>()
+-> import requests
+(Pdb) import requests
+(Pdb) b requests.request
+Breakpoint 1 at /usr/lib/python2.7/dist-packages/requests/api.py:16
+(Pdb) c
+foo
+bar
+> /usr/lib/python2.7/dist-packages/requests/api.py(57)request()
+-> with sessions.Session() as session:
+(Pdb) w
+  /usr/lib/python2.7/bdb.py(400)run()
+-> exec cmd in globals, locals
+  <string>(1)<module>()
+  /home/dbrecht/src/p/playground/example.py(19)<module>()
+-> get()
+  /home/dbrecht/src/p/playground/example.py(13)get()
+-> print(requests.get('https://example.com/'))
+  /usr/lib/python2.7/dist-packages/requests/api.py(72)get()
+-> return request('get', url, params=params, **kwargs)
+> /usr/lib/python2.7/dist-packages/requests/api.py(57)request()
+-> with sessions.Session() as session:
+
+```
+
+It's worthwhile to note that it's possible to import and set breakpoints in dependencies even before your code has done any importing itself.
+
+### Setting a breakpoint with a condition
+
+Let's say we want to break in the example file's `bar` method, but _only_ when the parameter value is equal to `"foo"`. This can be incredibly useful when we don't want to break into program execution on every iteration of a function or method:
+
+``` py
+$ python -m pdb example.py 
+> /home/dbrecht/src/p/playground/example.py(1)<module>()
+-> import requests
+(Pdb) b bar, value=="foo"
+Breakpoint 1 at /home/dbrecht/src/p/playground/example.py:8
+(Pdb) c
+foo
+bar
+> /home/dbrecht/src/p/playground/example.py(9)bar()
+-> print(value)
+(Pdb) value
+'foo'
+```
+
+### Setting a temporary breakpoint
+
+`tbreak` is another useful way to set breakpoints if we only want to break into execution once. The breakpoint is then automatically discarded. In this example, we only want to cause a break at the first call into `bar`:
+
+``` py
+$ python -m pdb example.py 
+> /home/dbrecht/src/p/playground/example.py(1)<module>()
+-> import requests
+(Pdb) tbreak bar
+Breakpoint 1 at /home/dbrecht/src/p/playground/example.py:8
+(Pdb) c
+foo
+Deleted breakpoint 1
+> /home/dbrecht/src/p/playground/example.py(9)bar()
+-> print(value)
+(Pdb) value
+'bar'
+(Pdb) c
+bar
+foo
+<Response [200]>
+
+```
+
+These methods have definitely been useful to me in the past. If you didn't already know about them, hopefully they will be a new tool to add to your debugging arsenal!
+
+[^1]: For instance, when running on an intentionally immutable container

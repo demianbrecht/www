@@ -1,0 +1,69 @@
+---
+title: 'Gen AI: Feeding the dormant hacker'
+description: >-
+  A self-described tech curmudgeon on how generative AI rekindled the urge to tinker, explore, and build outside the comfortable set of tools built up over the years.
+pubDate: 2025-05-27
+tags: ['programming', 'ai', 'productivity', 'learning']
+draft: false
+---
+
+I can be a bit of a tech curmudgeon at times. I once even went as far as to write that you would [pry vim from my cold, dead hands](https://dev.to/demianbrecht/you-will-pry-vim-from-my-cold-dead-hands-29d6). I have a set of tools and processes that I’ve built up over the years that I’m comfortable with. Because of the comfort level, I’ve also traditionally been my most productive with them. In over 20 years of professional software development, I’ve never come across productivity enhancement that has gotten me to throw everything out of the window and start anew. The use of Cursor and Gen AI has done just that. Here’s the story of my experience thus far, which I’m sharing in hopes of turning my level of stoke contagious with a wider audience than my immediate circle.
+
+I'm an 80s kid. A xennial. My father was a musician, a one-man band who was a very early adopter of MIDI. I grew up around computers. I fondly remember the days of the Vic 20, Commodore 64 and the Amiga and being wide-eyed and full of wonder at the pixellated images that took what seemed forever to load. I finally got some bigger-boy shoes in the late 90s with the home PC of my dreams running Windows ‘95. Much time was spent trying to establish dial-up connections when someone was already on the line elsewhere in the house. Gaming was my main interest (from Zork to Wolfenstein 3D), but getting computers to do things was also high on my list of interests, mostly tinkering first with Logo and eventually getting into BASIC.
+
+Over the following years, I toyed with web development, hosting my very first Diablo fan site on Geocities. It wasn’t until I saw someone yell “[Hack the Planet!](https://youtu.be/5y_SbnPx_cE?t=36)” (*groan*, I know), found a local [2600 crew](https://www.2600.com/) and did a little dumpster-diving when I got a little more serious about programming. I found the internet fascinating. I found the weak points fun.
+
+I started my professional career out at a small local business automation shop. I got my hands dirty with a number of different aspects of the business: Software (good ol' VB6 with an MS Access database), wiring up customer sites with cat5 cable for card scanners and providing training. I'd gotten a foot in the door. This was an exciting time for me. I was doing a lot of grunt work, but was still able to code every now and then and I actually got paid for it. I was also still spending time supplementing the more mundane aspects of my job with the hackers and the phone phreaks.
+
+Then the excitement increased by an order of magnitude when I was lucky enough (after a multitude of attempts) to get a foot in the door at Electronic Arts. At the time, I was a gamer and I finally was going to get the chance to work myself into a position where I could contribute to the games I played. By the time I’d left EA, I’d worked on a number of AAA titles, got to do some prototype work for the Wii that ended up being the basis of one of the Playground mini-games and even got to do some voice work for an NCAA Football title. During that time, my tinkering time went from network security to the open source community, particularly Python’s. While continuing my career between Popcap Games, Demonware (Activision) and then finally landing at Salesforce, I contributed to the Python Software Foundation (PSF). I contributed here and there to some of the issues in the tracker and to the http library. I even released a couple of (really unused) open source libraries.
+
+This is a synopsis intended to highlight how much I actually love what I do, not to be an autobiography. This isn’t just a job for me, it’s something I look forward to every day. Solving tough problems with computers is something I genuinely enjoy.
+
+However, along the way I lost a large portion of the drive to tinker and hack on things.
+
+Maybe it’s because I picked up too many outdoor activities. Maybe it’s because my software-related hobbies started to blend too much with my professional work. Maybe it’s because adulting cut into personal time and felt like I no longer had the chance to accomplish my lofty technical goals. Maybe it was a combination of all the above. At the end of the day, it boiled down to just not being able to find the time to achieve what I wanted to on my personal time.
+
+Then Gen AI came along.
+
+At first it seemed like a passing fad. The failure rate was high. Hallucinations were real. It seemed like it could maybe be useful for helping me to throw together some shell scripts or other mundane routine things but it wasn't likely going to be of any real use as I had to spend just as long fixing the output as I would have writing it in the first place.
+
+Then it got better. Companies started to introduce productivity initiatives which became a forcing factor for me to really give it a shot and find out where the ceiling was. I found I wasn't getting the opportunity to muck with it to the extent that I wanted to during the work day, so I started using it after work hours and over the weekends after the kids went to bed. What did I find?
+
+_This.
+Shit.
+Is.
+Fun._
+
+"[Vibe coding](https://en.wikipedia.org/wiki/Vibe_coding)"? Not quite. I’ve tried multiple paths to get me to this panacea of AI-assisted software development but never got close with anything outside of the simplest of use cases. I found that the most effective approach was to carve off a small, very specific piece of functionality, be extremely clear about the expected inputs and outputs, sometimes writing it down in some documentation and feeding that as context and instructions to the LLM. Then, begin the back and forth with the LLM. Having kids, especially teenagers, had prepared me for this:
+
+- Ask it to do something. Aim low, shoot high or in other words hope for the best but expect something half-assed.
+- Suggest it wasn't done optimally and suggest an alternate approach.
+- Watch it correct itself and get it a little closer.
+- Have some back and forth while whittling away at the cruft to get where you want it to be (test coverage, etc).
+- Expect it to do something underhanded: "_No, I really do want this to use a Red Hat base image. Please don't change it to Debian... Again_".
+- Expect it to not understand some things: "_Yes, I actually do want to keep the async request handlers but keep the database transactions synchronous_".
+- Expect to be caught in the wrong at times, admitting to yourself you were being dumb and that you can learn a thing or two from the LLM.
+
+
+_But_ expect that after a healthy amount of back and forth and, similar to working with your teenager, learning how to most **_effectively communicate with them_**, you will eventually get to your destination in a far shorter amount of time than it would have taken you on your own.
+
+The aspects that have been the most fun for me so far?
+
+I've gotten to play with tools and libraries that I would have likely otherwise skipped over because they're not part of my daily work (uv - yes I know, you don't need to tell me how good it is, alembic, sqlalchemy core to name a few).
+
+I’ve learned some tips and tricks that I can use in my daily work (i.e. using pg_isready as the health check in a docker-compose file like demonstrated [here](https://github.com/peter-evans/docker-compose-healthcheck/blob/master/docker-compose.yml) instead of a hacky shell script).
+
+A healthy amount of code can be written in a relatively short amount of time, though you do have to keep an eye on general correctness and needless complexity. My first real attempt at a putting something together outside of one-off scripts or Splunk queries ended up as a FastAPI project that had:
+
+- Dockerfile
+- docker-compose config for local dev with postgres tie-in and sane dependencies
+- CRUD endpoints for users and related models with unit tests
+- E-mail verification for new user accounts with modular providers
+- Migrations courtesy of alembic (properly configured)
+- Beginnings of authentication endpoints with OAuth providers
+
+**_In 2 hours!_**
+
+It's probably a stretch to think I could have accomplished that with the tools and libraries that I use on a daily basis. There's no chance I would have come close with frameworks that I've never really used.
+
+If you’ve found yourself being an AI curmudgeon, or are only using it because you’ve been told that you have to, I challenge you to play around with it more. A lot more. Explore its capabilities. See where it fails. See where it works. See not only what it can do for you but what you can learn from it. If you’ve had similar experiences to mine, you may just find yourself having fun again, looking forward to playing with technology outside of your daily work life. All while still being able to achieve your goals and putting in your adulting time.

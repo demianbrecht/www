@@ -1,0 +1,32 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { postUrl, tagUrl, formatDate, isoDate, readingTime } from '../utils';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { title, description, pubDate, tags, draft } = post.data;
+---
+
+<article class="post-card">
+  <div class="post-meta">
+    <time datetime={isoDate(pubDate)}>{formatDate(pubDate)}</time>
+    <span class="sep">/</span>
+    <span>{readingTime(post.body)}</span>
+    {draft && (<><span class="sep">/</span><span style="color: var(--status-warn)">draft</span></>)}
+  </div>
+
+  <a class="post-title-link" href={postUrl(post.id)}>
+    <h2>{title}</h2>
+  </a>
+
+  <p>{description}</p>
+
+  {tags.length > 0 && (
+    <div class="tag-row">
+      {tags.map((tag) => <a class="tag" href={tagUrl(tag)}>{tag}</a>)}
+    </div>
+  )}
+</article>

@@ -1,0 +1,110 @@
+---
+title: 'You will pry vim from my cold, dead hands'
+description: >-
+  Answering the funny looks: why I still reach for vim over an IDE: its
+  ubiquity across *nix systems, the power of command-line debuggers, and a
+  deliberately minimal .vimrc that travels anywhere.
+pubDate: 2020-03-01
+tags: ['vim', 'editors', 'tooling', 'developer-workflow']
+draft: false
+---
+
+I get funny looks from people quite often.
+
+*"What IDE do you use?"<br/>*
+*"I don't use an IDE unless I absolutely have to. I use vim."*
+
+There's that funny look again.
+
+*"Why on Earth would you use something so archaic?!"*<br/>
+*"How can you live without a GUI-driven debugger?!"*<br/>
+*"Why would you want to spend half your life configuring your editor?!"*
+
+Those are just a few of the typical questions that accompany those funny looks. Here are my typical answers for posterity's sake:
+
+## On using an archaic editor
+Yes, it's archaic. But hey, there are advantages to being archaic other than being able to pull the old "I've been doing this longer than you've been alive" line. Because it's archaic, it's literally the single most commonly available editor on *nix-based systems. If vim isn't available, you can usually rest assured that vi is. If you're accustomed to most of vim's basic features, you won't feel entirely out of place in vi. In today's world of distributed systems, having the ability to speak nearly each and every distro's editor language is an incredible useful skill. I feel as much at home editing on a RHEL system as I do on Debian as I do on OSX.
+
+## On living life without a GUI-driven debugger
+I've actually found that there's elegance and freedom in using command-line debuggers directly. Yes, there is a relatively steep learning curve (I'm looking squarely at you, gdb). Yes, setting a breakpoint will likely take longer when on the command line or may be a little unintuitive (I'm looking squarely at you import pdb; pdb.set_trace()). And yes, once you get into bed and begin to love using command line debuggers, you may catch yourself spending hours trying to continue living in your beautiful, magical world with languages that don't support it or support it very well (I'm looking squarely at you Java).
+
+But, once you get past those hurdles, the flexibility and power that you have at
+your fingertips is really unparalleled by anything else. Oh, and did I mention
+that debugging on a remote machine is as easy as SSH'ing into it and running the
+debugger in the shell? Good luck getting your \<insert favorite IDE here\> to do that across bastions or docker containers.
+
+## On spending half your life in config
+Well, here's the beautiful thing: I don't. To be fair, there was a day that I spent a ridiculous amount of time configuring a zsh shell and ran all ridiculous number of vim plugins to be all 1337. Problem is, they're not easily portable, especially when you start throwing ephemeral containers and VMs into the mix. I learn to rely on the near bare bones offerings that vim has. Here's my current .vimrc (pathogen is only used for solarized):
+
+```
+execute pathogen#infect()
+
+"--------------------------------------------------------
+" general
+"--------------------------------------------------------
+set nocompatible
+filetype on
+filetype plugin on
+filetype indent on
+
+set nobackup
+set noswapfile
+let mapleader = ','
+
+set noerrorbells
+autocmd! GUIEnter * set vb t_vb=
+
+" status
+set ls=2
+set statusline=%t[%{strlen(&fenc)?&fenc:'none'},%{&ff}]%h%m%r%y%=%c,%l/%L\ %P
+
+" general
+set background=dark
+colorscheme solarized
+set tabstop=4
+set shiftwidth=4
+set showmatch
+set number
+set smarttab
+set linebreak
+set nowrap
+set autoindent
+syntax enable
+
+" rfc
+au BufRead,BufNewFile *.rfc set filetype=rfc
+autocmd Filetype rfc setlocal textwidth=72 softtabstop=3 tabstop=3 shiftwidth=3
+
+" yaml
+autocmd Filetype yaml setlocal expandtab textwidth=79 softtabstop=2 tabstop=2 shiftwidth=2
+
+" python
+set expandtab
+autocmd Filetype python,rst setlocal expandtab textwidth=79 softtabstop=4
+"autocmd BufWritePost *.py call Flake8()
+
+" markdown
+au BufRead,BufNewFile *.md set filetype=markdown
+autocmd Filetype markdown setlocal textwidth=80
+
+" rst
+au BufRead,BufNewFile *.rst set filetype=rst
+autocmd Filetype rst setlocal softtabstop=3 tabstop=3 shiftwidth=3
+```
+
+The above is simple enough that I can easily set the most important settings directly within an open editor without having to open a reference guide or weed through hundreds or thousands of lines of configuration. But there's also just enough to keep me happily editing files in my primary language (Python) and make adjustments should I start writing other languages again.
+
+## At the end of the day
+In no way, shape or form am I saying that one shoe fits all. I don't believe that everyone should adopt my editor of choice. It's not the One True Editor (although I'll never admit that in person). Yes, there is some masochism involved. It's simply the editor that has worked best for me over the years and even though I try new IDEs (PyCharm, VS Code, Visual Studio, Emacs, etc), I always find myself coming back to the warm, comforting security blanket that is vim.
+
+So yes, you will have to pry vim from my cold, dead hands.
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../components/Callout.astro';
+    import Terminal from '../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}

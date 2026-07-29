@@ -1,0 +1,36 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  type?: 'website' | 'article';
+  publishedDate?: Date;
+  /** Set by Astro when a Markdown/MDX page uses this via `layout:`. */
+  frontmatter?: { title?: string; description?: string };
+}
+
+const { frontmatter, ...props } = Astro.props;
+
+// MDX pages pass their frontmatter as one prop; .astro callers pass props directly.
+const title = props.title ?? frontmatter?.title;
+const description = props.description ?? frontmatter?.description;
+const { type, publishedDate } = props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead {title} {description} {type} {publishedDate} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

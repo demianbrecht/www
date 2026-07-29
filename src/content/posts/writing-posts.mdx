@@ -1,0 +1,105 @@
+---
+title: 'Writing posts: a reference'
+description: >-
+  How this site is built and how to write the next post, with a tour of the
+  MDX components available to you.
+pubDate: 2026-07-27
+tags: ['meta', 'astro', 'mdx']
+draft: true
+---
+
+This first post doubles as a reference for the components and conventions
+available when writing new entries.
+
+## Frontmatter
+
+Every post lives in `src/content/posts/` as an `.mdx` (or `.md`) file. The
+filename becomes the URL slug, and the frontmatter is schema-validated at build
+time by `src/content.config.ts` — a typo fails the build rather than shipping a
+broken page.
+
+```yaml
+---
+title: 'Writing posts: a reference'      # required
+description: One or two lines, used in listings and meta tags.  # required
+pubDate: 2026-07-27                       # required
+updatedDate: 2026-07-28                   # optional
+tags: ['meta', 'astro']                   # optional, defaults to []
+draft: false                              # optional, defaults to false
+---
+```
+
+Setting `draft: true` keeps a post visible in `make dev` but excludes it from
+production builds and the RSS feed — a scratchpad that can't leak.
+
+## Components
+
+Import components at the top of any `.mdx` file and use them inline as JSX.
+
+### Callouts
+
+```mdx
+import Callout from '../../components/Callout.astro';
+
+<Callout type="warn">Mind the rate limits.</Callout>
+```
+
+import Callout from '../../components/Callout.astro';
+import Terminal from '../../components/Terminal.astro';
+
+<Callout type="info">
+  The default tone, for asides and context.
+</Callout>
+
+<Callout type="warn">
+  For caveats and gotchas worth stopping over.
+</Callout>
+
+<Callout type="danger" title="Don't do this">
+  For genuine footguns. `title` overrides the default label.
+</Callout>
+
+<Callout type="success">
+  For confirmed results and green builds.
+</Callout>
+
+### Terminal blocks
+
+Wrap a fenced code block in `<Terminal>` for framed shell output:
+
+<Terminal title="shell">
+```console
+$ make dev
+  astro  v5.x  ready in 312 ms
+  ┃ Local    http://localhost:4321/
+```
+</Terminal>
+
+## Prose elements
+
+Standard Markdown renders with the theme applied: [links](https://astro.build)
+pick up the accent colour, inline `code` sits in a subtle box, and *emphasis*
+stays italic.
+
+> Blockquotes get a left rule and muted text — useful for pulling a line out of
+> a longer citation.
+
+| Element | Treatment |
+| --- | --- |
+| Headings | Weight and scale only, no colour |
+| Links | Accent blue, underline on hover |
+| Tables | Header rule, uppercase column labels |
+
+Syntax highlighting runs through Shiki with the `github-dark-default` theme:
+
+```typescript
+type Config = { retries: number; verbose: boolean };
+
+function withDefaults(partial: Partial<Config>): Config {
+  return { retries: 3, verbose: false, ...partial };
+}
+```
+
+---
+
+That's the whole toolkit. Run `make new-post` to scaffold the next entry.

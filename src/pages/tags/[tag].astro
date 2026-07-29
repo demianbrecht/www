@@ -1,0 +1,49 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { isVisible, byNewest, slugifyTag, url } from '../../utils';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = (await getCollection('posts', isVisible)).sort(byNewest);
+
+  // One page per tag slug. Distinct display spellings that slugify the same
+  // (e.g. "Web Dev" / "web-dev") collapse onto one page; the first wins as label.
+  const groups = new Map<string, { label: string; posts: typeof posts }>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      const slug = slugifyTag(tag);
+      const group = groups.get(slug);
+      if (group) group.posts.push(post);
+      else groups.set(slug, { label: tag, posts: [post] });
+    }
+  }
+
+  return [...groups.entries()].map(([slug, { label, posts: tagged }]) => ({
+    params: { tag: slug },
+    props: { label, posts: tagged },
+  }));
+};
+
+const { label, posts } = Astro.props;
+---
+
+<BaseLayout
+  title={`#${label}`}
+  description={`Posts tagged ${label}.`}
+>
+  <div class="wrap">
+    <h1>#{label}</h1>
+    <p class="label">
+      {posts.length} {posts.length === 1 ? 'entry' : 'entries'} &middot;
+      <a href={url('tags')}>All tags</a>
+    </p>
+
+    <ul class="post-list" style="margin-top: 2rem">
+      {posts.map((post) => (
+        <li><PostCard {post} /></li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>

@@ -1,0 +1,217 @@
+---
+title: 'Why the hell is my code so slow?! (aka performance analysis in Python)'
+description: >-
+  Your feature shipped, passed review, and then someone flagged the latency. A walkthrough of profiling Python to find where the time actually goes before you start optimizing.
+pubDate: 2020-03-10
+tags: ['python', 'performance', 'tutorial']
+draft: false
+---
+
+## Setting the stage
+
+So you've finally finished that feature that you've been grinding on for a while. It's polished up. It's passed the unit tests you've written for it locally. It's passed your local integration tests. The pull request has been reviewed and iterated on. You're happy you still have hair left after a few back-and-forths with the team pedant who kept hitting "request changes" in their review even though everyone else on the list approved it already. Your pull request has been finally been accepted by all. It's time to merge it.
+
+*You hit the button.*
+
+*It's in master.*
+
+
+
+You're proud of the work you've done as well you should be. You've put in the time and the effort into understanding what your producer, product owner or customer was looking for and bridging the technical requirements to pull it off successfully.
+
+*Nothing broke the master build.*
+
+You go have a celebratory scotch that night. Or a glass of wine. Or a coffee. Or a water. Whatever. Your feature has been deployed and is being used by the general public. This is awesome. Another feather in your cap.
+
+*And then you get the email.*
+
+> Thanks for all your hard work on this great new feature! We haven't seen any new bugs come out of it as a result and no complaints from our users. Awesome work! Buuuut, we were noticing some slowness when using the feature and dug into it a bit. Seems like the main endpoint you wrote is causing our average response time down by 500ms.
+
+Your world crumbles around you. You can feel the heat as your face reddens. This feels worse than breaking master. How did this happen?! How on Earth are you going to solve this problem?
+
+Sound vaguely familiar? Not experienced it and are hoping to avoid as much as possible in the future? Hoping to get past this completely unnecessary possibly fictional story in order to find some nuggets that may help in the future? Never fear, I'm now finished attempting to needlessly blow up the reading time of this post!
+
+*(The astute reader may notice the distinct lack of load tests in the above story. Of course, this __never__ happens in real life... __RIGHT?!__)*
+
+## The feature
+
+Let's say the amalgamation of my blood, sweat and possibly a few tears is incredibly complex. The feature that was merged into master and brought my team's servers near to a state of [DoS](https://en.wikipedia.org/wiki/Denial-of-service_attack) looked like this:
+
+``` py
+def print_this(value_a, value_b):
+    print("{} did this thing to {}".format(value_a, value_b))
+```
+
+*(The observant reader will notice that this is in no, way, shape or form complex code. However, it should be enough to demonstrate my typical approach to investigating and solving performance issues)*
+
+## What's slow?
+
+If what's causing the bottleneck is unknown to me, my first stop will typically be [`cProfile`](https://docs.python.org/3/library/profile.html). There are a few different methods of running `cProfile` and printing statistics, but I'm only going to concentrate on the process that I typically use[^1].
+
+First, I'll instrument the entry and exit points of the code. In this incredibly complex case, it'll be where `print_this` is called:
+
+``` py
+import cProfile
+
+profiler = cProfile.Profile()
+profiler.enable()
+
+print_this('foo', 'bar')
+
+profiler.disable()
+profiler.dump_stats('print_this.profile')
+```
+
+*It's worthwhile to note that Python 3.8 introduced a [context manager](https://docs.python.org/3/reference/datamodel.html#context-managers) implementation which is pretty nifty, but I wrote this using 3.7 so we're just going to have to deal with the archaic method.*
+
+The results of the profiling will be dumped to the file `print_this.profile` for analysis by other tools, namely [`pstats`](https://docs.python.org/3/library/profile.html#module-pstats)[^2]. Alternatively, you can print the results directly using `profiler.print_stats()`:
+
+``` py
+In [1]: import pstats                                                                                                                                                                       
+
+In [2]: stats = pstats.Stats('print_this.profile')                                                                                                                                          
+In [3]: stats.sort_stats('cumulative').print_stats()                                                                                                                                        
+Mon Mar  9 21:14:09 2020    print_this.profile
+
+         4 function calls in 0.000 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.005    0.005 print_this.py:1(print_this)
+        1    0.005    0.005    0.005    0.005 {method 'format' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+```
+
+I usually sort by cumulative time to get an idea of what the problematic call stack might look like (you can find the other available values and descriptions of each [here](https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats)).
+
+A worthy mention here is that you can also limit the number of lines output. Integers will limit to line count while a fraction between 0.0 and 1.0 will output a percentage. See [here](https://docs.python.org/3/library/profile.html#pstats.Stats.print_stats) for other possible filters.
+
+*(The astute reader will shame me for the numbers in the above table. To be clear, the numbers are fudged for the sake of keeping the code simple.)*
+
+Looking at the output from `pstats`...
+
+**AHA!**
+
+I can easily tell what's chewing up the time. There are two functions at the top of the pile, one of which has a `percall` and `tottime` of `0.000`, but cumulative time of `0.005`. This tells me that this is isn't the target but is part of the call stack. On the other hand, `{method 'format' of 'str' objects}` is taking a ridiculous `0.005`s per call! Problem found! Call in the cavalry!
+
+Oh wait... I'm the cavalry. Crap.
+
+## So what to do?
+
+Thankfully (and completely intentionally), the scope of this particular performance issue is small. It's limited to a single line. In real life, it will almost certainly be more complex, so brace yourself for iterative code profile instrumentation and experiments. It's not always a simple task to nail down performance issues, but it's oh so satisfying when you've identified and squashed a bottleneck.
+
+In this case, I know that the problem with the performance is the call to `<str>.format()`, so I have to figure out a replacement for it. Again, thankfully (and again, entirely intentionally) I'm aware of a few different methods that it can be replaced with. But which one should I use? The choices I have available to me are:
+
+* concatenation (`value_a + ' did this thing to ' + value_b`)
+* interpolation (`'%s did this thing to %s' % (value_a, value_b)`), and
+* f-strings (`f'{value_a} did this thing to {value_b}'`) 
+
+Rather than having to iteratively refactor, instrument, output and analyze performance metrics, I can use a simple tool I have at my disposal: [`timeit`](https://docs.python.org/3/library/timeit.html):
+
+``` bash
+# Concatenation
+$ python -m timeit -n 500000 -s "value_a, value_b = ('foo', 'bar')" "value_a + ' did this thing to ' + value_b"
+500000 loops, best of 5: 65.2 nsec per loop
+
+# Interpolation
+$ python -m timeit -n 500000 -s "value_a, value_b = ('foo', 'bar')" "'%s did this thing to %s' % (value_a, value_b)"
+500000 loops, best of 5: 134 nsec per loop
+
+# F-Strings
+$ python -m timeit -n 500000 -s "value_a, value_b = ('foo', 'bar')" "f'{value_a} did this thing to {value_b}'"
+500000 loops, best of 5: 56.7 nsec per loop
+```
+
+*It's also possible to import and use `timeit` from within a Python shell. Check out the interface [here](https://docs.python.org/3/library/timeit.html#python-interface) if interested.*
+
+Two notables in the above example are:
+
+a) I'm explicit about the number of loops to run (`-n`)
+b) I don't want to measure the cost of variable assignment (i.e. `value_a = 'foo'`), so I pull that part out into the setup argument (`-s`).
+
+Based on this, I can easily tell which method I should use in my code: f-strings!
+
+## Righting the wrongs
+
+So now that I know what needs to change, those changes are made:
+
+``` py
+def print_this(value_a, value_b):
+    print(f"{value_a} did this thing to {value_b}")
+```
+
+And just for sanity sake, I re-run the instrumented code and load and dump out the results:
+
+``` bash
+In [1]: import pstats                                                                                                                                                                    
+In [2]: stats = pstats.Stats('print_this.profile')                                                                                                                               
+In [3]: stats.sort_stats('cumulative').print_stats()                                                                                                                                     
+Mon Mar  9 22:02:13 2020    print_this_fstring.profile
+
+         3 function calls in 0.000 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.000    0.000 print_this.py:1(print_this)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+```
+
+And indeed, the performance problem has been resolved. Huzzah! Not only has my feature been shipped, but I've successfully been able to resolve a nasty performance issue! Pull request has been created along with details of the performance analysis, accepted and merged. *Now* I can go go home and partake in that celebratory scotch. Or glass of wine. Or coffee. Or water. Whatever.
+
+## Hold on, WHY is `<str>`.format() slow?
+
+*If you're not so interested, feel free to stop reading here as you likely won't need to use the following tips 'n tricks in your daily life of performance analysis.*
+
+For those of you who are interested, oh I'm so glad that you asked! When trying to figure out why solution A is better than solution B, there's no better method than using the [`dis`](https://docs.python.org/3/library/dis.html) module. For our purposes, here's what string formatting and f-strings look like in Python 3.7:
+
+``` bash
+# String formatting
+In [1]: from print_this import print_this                                                                                                                                               
+In [2]: from dis import dis                                                                                                                                                             
+In [3]: dis(print_this)         
+  2           0 LOAD_GLOBAL              0 (print)
+              2 LOAD_CONST               1 ('{} did this thing to {}')
+              4 LOAD_METHOD              1 (format)
+              6 LOAD_FAST                0 (value_a)
+              8 LOAD_FAST                1 (value_b)
+             10 CALL_METHOD              2
+             12 CALL_FUNCTION            1
+             14 POP_TOP
+             16 LOAD_CONST               0 (None)
+             18 RETURN_VALUE
+
+
+# F-Strings
+In [1]: from print_this import print_this                                                                                                                                                
+In [2]: from dis import dis                                                                                                                                                              
+In [3]: dis(print_this)                                                                                                                                                                  
+  2           0 LOAD_GLOBAL              0 (print)
+              2 LOAD_FAST                0 (value_a)
+              4 FORMAT_VALUE             0
+              6 LOAD_CONST               1 (' did this thing to ')
+              8 LOAD_FAST                1 (value_b)
+             10 FORMAT_VALUE             0
+             12 BUILD_STRING             3
+             14 CALL_FUNCTION            1
+             16 POP_TOP
+             18 LOAD_CONST               0 (None)
+             20 RETURN_VALUE
+```
+
+Now unfortunately for our purposes, it isn't immediately obvious what the difference is between the two. However, this also presents us the opportunity to dig into the interpreter implementation and at least derive a theory[^3]:
+
+The notable differences between the two are that string formatting calls `LOAD_METHOD` and `CALL_METHOD`, while the f-string implementation simply calls `FORMAT_VALUE`. Looking at those opcodes (defined in [opcode.h](https://github.com/python/cpython/blob/master/Include/opcode.h) and their respective implementations in [ceval.c](https://github.com/python/cpython/blob/master/Python/ceval.c), we can relatively safely come to the conclusion that [`LOAD_METHOD`](https://github.com/python/cpython/blob/3.7/Python/ceval.c#L3034) and [`CALL_METHOD`](https://github.com/python/cpython/blob/3.7/Python/ceval.c#L3071) are far more costly than [`FORMAT_VALUE`](https://github.com/python/cpython/blob/3.7/Python/ceval.c#L3254), which actually formats the entire string directly in the opcode handler.
+
+## Wrapping things up
+
+Going into this depth of performance analysis isn't always required. Most of the times things will work to an acceptable level of performance. Having these tools in your back pocket can sometimes promote the want to analyze everything you write. However, one should always remember that "premature optimization is the root of all evil"!
+
+
+[^1]: Feel free to heckle in the comments
+[^2]: I prefer using `pstats` to dumping stats directly because of the additional niceties it offers. Also because I frequently screw up and need to have a stable copy of the profile output.
+[^3]: Interpreter execution is not an area of expertise for me, so I very much welcome feedback here.

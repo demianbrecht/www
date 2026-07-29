@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { url } from '../utils';
+---
+
+<BaseLayout title="404" description="Page not found.">
+  <div class="wrap" style="padding: 2rem 0">
+    <p class="error-code">404</p>
+    <h1 style="margin-top: 0">Page not found</h1>
+    <p style="color: var(--text-dim)">
+      That page doesn't exist, or it may have moved.
+    </p>
+    <p style="margin-top: 2rem">
+      <a href={url('/')}>&larr; Back to index</a>
+    </p>
+  </div>
+</BaseLayout>

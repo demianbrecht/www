@@ -1,0 +1,275 @@
+---
+title: 'The division of the local harnesses'
+description: >-
+  The most important question in AI architecture isn’t which model you use. It’s who owns the control loop.
+  That choice affects cost, reliability, and how easily you can swap providers. In this article, I look at three categories of workflows and explore why the nature of the problem should determine the harness, and why code, rather than the model, should often drive the loop.
+pubDate: 2026-07-28
+tags: ['ai-engineering', 'llm-architecture', 'agentic-workflows', 'ai-cost-optimization', 'software-design']
+draft: false
+---
+
+## Framing the problem
+Imagine that building a software system is like running a restaurant.
+
+Traditional code is a strict, boring, but 100% reliable restaurant manager. It
+follows the rules perfectly every single time and works for free.
+
+The AI (LLM) is a brilliant, creative chef. It is amazing at complex tasks but
+it is expensive, slightly unpredictable and shouldn't be doing the accounting.
+
+In this post, we're going to explore two ways of running this restaurant:
+
+### The AI is the boss (LLM-as-runtime)
+This is what most people are doing right now. You give the AI the keys to the
+business. It talks to the customers, takes the orders, cooks the food and rings up the bill.
+
+*The problem: It's expensive per run, **every** run, it takes longer and
+sometimes the AI gets confused and does something unpredictable.*
+
+*The benefit: It can be amazing at solving problems that have traditionally
+required humans to solve.*
+
+### The code is the boss (software-as-runtime)
+The traditional code (the Manager) runs the restaurant. It seats the guests
+and takes the payment. It only calls the AI (the Chef) when it's time to cook.
+
+*The problem: It can be more expensive and time consuming to build up front.*
+
+*The benefit: It is much cheaper, completely predictable, and much easier to 
+swap out the Chef if you find a better one later.*
+
+## Who owns the control loop?
+Every major AI provider ships a 'harness': The software, UIs, and built-in
+tooling that interacts with their LLM on behalf of the operator. More recently,
+we have open harnesses such as OpenCode which provides a great deal of increased
+flexibility over frontier-provided harnesses. Even taking those into account,
+the most important question for operators right now isn't which LLM-driven 
+harness is best. It’s whether you should be using them at all.
+
+The most important architectural question is who owns the control loop: the model
+or ordinary software. That decision has consequences for cost, reliability, 
+testability, and provider agility.
+
+### LLM-as-runtime
+Skills, commands, and agent definitions become LLM-as-runtime when the model
+interprets their instructions, decides which actions to perform, and drives
+execution from beginning to end. The underlying tools may be deterministic,
+but the orchestration surrounding them is not.
+
+### Software-as-runtime
+Conventional software systems that use LLMs only when judgement is actually
+required. The overall topology of these systems is entirely deterministic and
+does not change based on what models are used internally. Code is unit tested
+and instrumented for observability.
+
+LLM-as-runtime is where the bulk of local operator space currently sits.
+
+## The benchmark treadmill
+
+As an industry, we have been spending far too much time comparing the harnesses
+that frontier model providers ship. We run benchmarks against the capabilities
+of each of the combinations of black box harnesses and their respective LLMs.
+We compare them against each other. We announce winners and proclaim which are
+the best for given use cases. 
+
+As a result of the constant comparison, developers and operators are often
+left scrambling to keep up to date. Completed, harness-specific plugins may be
+made irrelevant. Workflows can be upended due to provider changes. Complex evals
+are written in order to guard against non-determinism of a probabilistic system.
+Falling token prices do not necessarily reduce total cost when harnesses 
+respond by consuming more tokens, spawning more agents, and increasing the
+number of model-mediated steps. The need to pivot quickly while maintaining
+system integrity is becoming increasingly important.
+
+Production agentic services have figured this out. Mastra, Agentforce, LangGraph
+and other similar platforms offer the ability to ship agentic services that
+offer a blend of determinism and non-determinism, while allowing developers to
+choose what model to use and when, even across providers.
+
+**Why aren't we doing the same for harnesses used by developers and operators?**
+
+*We need to start looking at the right tools for a given problem. This shouldn't
+be a new observation for software developers, it's just different from what the
+hype tells us.*
+
+## Three classes of workflows
+
+As I've been digging deeper and deeper into agentic development, I've
+noticed emergent patterns: Sometimes determinism is
+important. Other times, speed of creation and iteration is what's important.
+Sometimes the safeties of a production grade agentic system are required.
+Other times they're not. Typically, the problems can be classified as:
+
+1. Deterministic workflows (code problems)
+2. Judgement-dominant workflows (judgement problems)
+3. Deterministically orchestrated hybrid workflows
+
+Let's take a look at three concrete use cases, looking at what categories they
+fall under, how well suited they are for frontier harnesses and whether or not
+the LLM-as-runtime constant associated cost is warranted. Assumptions have been
+made for illustrative purposes:
+
+### The PR Review
+The team wants PR reviews from the perspectives of a quality engineer and
+security specialist. So the team has created a Claude plugin. This plugin
+spawns subagents that have their respective isolated identities.
+Because each subagent has an independent context window, the reviewers 
+do not share one another’s working context.
+The subagents are well-defined in prose. Reviews have a simple slash 
+command entrypoint: `/quality:review`. 
+
+#### Category: Judgement-dominant
+The PR review is largely non-deterministic. The sub-agents will evaluate the PR
+similar to how two independent humans would. Does this code look correct? Does
+it function as it's intended to? Are there meaningful tests covering the
+production code?
+
+#### Frontier harness: potentially suboptimal
+While using a frontier harness has meaningfully decreased the human effort
+required to review a PR, their use may still be suboptimal. Why? 
+Separate contexts provide useful independence, but they do not guarantee
+independent errors. Research into LLM evaluation panels suggests that apparent
+multi-agent consensus can substantially overstate the number of genuinely
+independent judgements being made. For adversarial review, 
+model-family diversity may therefore be more valuable than simply 
+spawning additional agents from the same family [1].
+
+Frontier harnesses generally optimize for their provider’s own models. 
+Cross-family review is possible through external tooling, but it is rarely a
+first-class capability.
+
+#### Cost: Mostly warranted
+Due to the nature of the problem, the associated cost is mostly warranted. There
+is little in terms of deterministic nature in PR reviews and we're almost
+entirely leveraging LLMs for what they're good at. There may be some
+deterministic functionality that goes with the review (i.e. updating work items)
+which is why this is classified as "mostly warranted", but that's entirely up to
+the developing team.
+
+### Weekly request success rate
+The team wants to have a quick overview of their service request success rate
+to increase their observability. For this, they might use the expression:
+
+```
+S = R_good / R_valid
+```
+
+Where:
+- `S`: request success ratio
+- `R_good`: requests satisfying the service-level indicator
+- `R_valid`: valid requests included in the measurement
+
+They have created a Claude skill that fetches the metrics from their data source
+and runs the expression against the provided time window. In order to
+avoid LLM computation, they have written a script that the LLM executes.
+
+#### Category: Deterministic workflow
+There is nothing in this skill that would have previously not been written by a
+script, whether bash, Python or other. No judgement is needed at any point.
+
+#### Cost: Unwarranted
+As a recurring operational workflow, the model cost is unwarranted. As an
+occasional natural-language interface over a deterministic script, the
+convenience may still justify the small expense, but the model is acting
+as a user interface, not providing substantive judgement.
+
+### Weekly service ops reviews
+The team wants to have the ability to:
+
+1. Look at service anomalies over the last week and identify potential root
+   causes
+2. Report on support requests in the team's Slack channel
+3. Report on any pages that happened during the week
+
+In order to accomplish this, they have created a Claude skill that contains
+prose walking the LLM through the workflow. Anomalies are computed in scripts,
+prioritized and investigated in prose. Slack and incident-management system are
+also queried in scripts and summarized by the LLM.
+
+#### Category: Deterministically orchestrated hybrid workflow
+The overall topology is known and does not require judgement. Each one of
+the requirements listed above could be thought of as a node in a graph. 
+However, because the overall execution is written in LLM prose, the overarching
+execution of the workflow is not guaranteed to be as expected.
+
+#### Cost: Partially unwarranted
+The workflow topology is known in advance: collect anomaly data, collect 
+support discussions, collect incidents, analyse each input, and assemble the
+report. Code can guarantee that every stage runs, that failures are handled,
+and that outputs are recorded. Models are still useful within individual
+stages (for prioritization, investigation, and summarization) but they do 
+not need to decide what the workflow is.
+
+This is the architectural inversion at the centre of the post: **code should 
+call the model, rather than asking the model to call the code.**
+
+## A note on open harnesses (i.e. OpenCode)
+Open harnesses such as OpenCode meaningfully improve provider agility by making
+model selection less tightly coupled to the harness. They do not necessarily
+change who owns the control loop. A provider-neutral LLM-driven harness is
+still LLM-as-runtime if the model interprets prose and directs execution. In
+other words, these are still potentially large improvements over frontier 
+harnesses in terms of vendor agility and are absolutely worth further
+investigation.
+
+## What about agility?
+Building complex software is hard. Building complex software that works
+meaningfully with an LLM is even harder. 
+
+### Up-front agility
+If speed of iteration is what's most important with the given problem and it
+doesn't absolutely require production-like safeties or deterministic guarantees,
+then it very well may be that writing a custom harness is unwarranted.
+Changing prose is faster than changing software. Verifying that the behavioural
+change is safe, repeatable, and compatible across models may not be.
+
+### Vendor agility
+Locking into vendor-specific features will always decrease vendor-specific
+agility. For instance, moving from Opus to Grok may require a lift and shift of
+existing artifacts. Evals will need to be written in order to ensure the
+preservation of model results across existing prose, be it skills, commands or
+others. Contrast this with a deterministic harness written in code that only
+uses the LLM when needed. Because the overarching requirements are executed as a
+graph, the topology is guaranteed to remain the same. 
+
+Unit and system tests can guarantee that the workflow topology and deterministic
+contracts remain unchanged. Evals are still required for the probabilistic 
+nodes, but their scope is constrained to the places where model behaviour actually matters.
+
+## Where do we go from here?
+This post may sound like I'm advocating for ditching frontier harnesses for
+bespoke software solutions. I'm not. What I'm advocating for
+is that we start thinking about AI systems problems as we've been trained and
+learned over the years as software developers:
+
+**Consider the nature of the specific problem you're trying to solve and use the
+best tool to do so.**
+
+It may very well be that the problem is best suited for a frontier harness. It
+may be better suited for a newer LLM-driven harness such as OpenCode. But it may
+also be that the problem **should not** be solved by an LLM directly, but rather
+by code that uses the model only where probabilistic judgement adds sufficient value.
+
+These are the architectural principles behind
+[Switchplane](https://github.com/salesforce-misc/switchplane): deterministic 
+control flow, provider-independent model routing, and explicit use of LLMs at 
+the points where probabilistic judgement adds value. Switchplane is one 
+implementation of the idea, but the larger principle applies regardless of framework.
+
+Frontier and open harnesses remain excellent tools for judgement-dominant and 
+rapidly evolving work. But when the topology is known, execution matters, and 
+much of the work is deterministic, the model should not own the control loop. 
+Code should call the model, not the other way around.
+
+References:
+1. [Correlated Errors in Large Language Models](https://arxiv.org/abs/2506.07962) - Elliot Kim, Avi Garg, Kenny Peng, Nikhil Garg
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../components/Callout.astro';
+    import Terminal from '../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}

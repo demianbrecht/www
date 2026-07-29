@@ -1,0 +1,15 @@
+---
+interface Props {
+  /** Shown in the window chrome — usually a shell or host name. */
+  title?: string;
+}
+
+const { title = 'shell' } = Astro.props;
+---
+
+<div class="terminal">
+  <div class="terminal-bar">
+    <span class="title">{title}</span>
+  </div>
+  <slot />
+</div>

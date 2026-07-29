@@ -1,0 +1,24 @@
+---
+layout: ../layouts/BaseLayout.astro
+title: About
+description: About this site and its author.
+---
+
+{/* Aliased: MDX pages already export a page-level `url`. */}
+import { url as href } from '../utils';
+
+<div class="wrap">
+
+# About
+I’m Demian Brecht, a software engineer, writer, and longtime builder of things that occasionally behave as intended. I’ve spent more than two decades working across backend systems, infrastructure, developer tooling, security, and the web, with a particular fondness for Python and a habit of pulling abstractions apart to see what they’re hiding.
+
+This site is where I work through ideas about software engineering, AI systems, architecture, reliability, and the gap between technology that looks impressive and technology you would actually trust in production. The writing is part analysis, part opinion, and occasionally a public record of me developing a stronger opinion while typing.
+
+Outside of work, I’m a dad and generally happiest somewhere away from a screen: downhill mountain biking, lifting heavy things, camping, overlanding, or exploring British Columbia with an unreasonable amount of gear packed into a Jeep. I’m interested in building a good life as much as building good software, although both seem to involve constant maintenance and more equipment than originally expected.
+
+## Elsewhere
+
+- GitHub: [demianbrecht](https://github.com/demianbrecht)
+- Feed: <a href={href('rss.xml')}>rss.xml</a>
+
+</div>

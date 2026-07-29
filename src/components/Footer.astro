@@ -1,0 +1,17 @@
+---
+import { AUTHOR } from '../consts';
+import { url } from '../utils';
+
+// Build-time constant — the year the site was last built.
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>&copy; {year} {AUTHOR}</span>
+    <span>
+      <a href={url('rss.xml')}>rss</a> &middot;
+      <a href={url('archive')}>archive</a>
+    </span>
+  </div>
+</footer>
