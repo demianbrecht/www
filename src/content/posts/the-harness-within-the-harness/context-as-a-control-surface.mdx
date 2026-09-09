@@ -1,0 +1,253 @@
+---
+title: 'Harness Within a Harness: Context as a Control Surface'
+description: >-
+  A context parameter seemed like a small addition to my MCP tools. Then I watched
+  the outer harness use it to steer an investigation, again and again.
+pubDate: 2026-09-09
+tags: ['ai-engineering', 'agentic-workflows', 'mcp', 'software-architecture', 'llm-architecture']
+draft: false
+heroImage: ../../../assets/posts/context-as-a-control-surface.png
+heroImageAlt: 'A mechanical core inside a teal control ring, with amber light paths connecting the inner mechanism and outer housing'
+---
+
+import Callout from '../../../components/Callout.astro';
+import contextControlLoop from '../../../assets/posts/context-control-loop.svg';
+
+<Callout type="info">
+I make an assumption in this post that you’re already familiar with using MCP
+as a seam for agentic operations. Not only to expose individual tools, but
+full-blown systems. If the concept is new to you, taking a gander through
+my previous post, <a href="/posts/the-harness-within-the-harness">*The Harness
+Within the Harness: A Portable Application Boundary for Coding Agents*</a>,
+may be useful.
+</Callout>
+
+## Too much control can be problematic
+
+Good old software is great. You can make it enforce guarantees. It allows you to instrument it.
+To unit test it. You can relatively easily reason about it. It is also a
+fantastic way to add some guarantees when needed with the magic of LLMs.
+
+As I’ve found along the way though, binding that magic with software can be *hard*.
+
+LLMs have a knack for finding failure modes I hadn’t thought of. On top of the base
+errors that arise because the internet just sucks sometimes, there are all the
+creative ways an agent can get itself stuck. Give it a tool like bash and the
+possibilities really open up. Trying to encode a useful recovery path for every
+situation I encountered became an exercise in finding the next situation I hadn’t.
+This has led me to much frustration.
+
+These problems were most prevalent when I had software owning the control
+loop entirely. Maybe it was partially that it was a bespoke runtime. Maybe
+it was the complexity of the system I was working on. Maybe it was something else.
+Regardless, with software owning the entire control loop, it was a painful process.
+Many times I had keyboard key impressions on my face after some new failure mode
+that I hadn’t accounted for made itself known.
+
+Breaking these problems up into distinct MCP tools and using the conversational
+harness as the entrypoint rather than a CLI helped alleviate these frustrations a great deal.
+Now, instead of putting an entire system behind a single entrypoint, I could
+break the system into distinct tools and let the conversational harness take
+the reins. If something went awry, the harness could typically work out why
+and resolve it, followed by another tool run.
+
+> **To be clear: this was not giving up on software owning the control loop.
+It was adding a layer of intelligence on top of it. The same principles
+behind <a href="/posts/stop-asking-llms-to-be-deterministic/">*Stop Asking
+an LLM to be Deterministic*</a> still apply.**
+
+The software-owned loop still controls **execution**. The conversational
+harness controls **adaptation**.
+
+However, there was still a slight problem.
+
+The software side was constrained. It would take parameters (say, a PR URL for
+a PR review tool) and do its thing as a self-contained unit. Other than
+making changes to the underlying tools themselves, the conversational harness
+didn’t have any meaningful way to steer it.
+
+What was missing wasn’t another tool or another agent, it was a control
+surface between the two harnesses.
+
+## Adding some cooperation to the mix
+
+So I decided to try something that, in hindsight, was painfully obvious:
+
+Why not add a new parameter to the MCP tools allowing the caller to provide
+contextual guidance that could help steer the underlying agent systems? The
+context parameter can be injected into the internal prompts. This lets the
+conversational harness influence how the bounded system approaches the
+problem without changing the system’s hard constraints.
+
+Traditional parameters usually describe **what** should happen: `pr_url`,
+`repository`, `alert_id`, `environment`, etc.
+
+Context describes **how the system should reason about what is happening**:
+
+```text
+Focus on the authentication changes.
+
+The previous investigation ruled out database saturation.
+
+Prioritize the backend investigation; the frontend errors appear to be a secondary symptom.
+```
+
+Without that contextual channel, you eventually end up trying to encode
+all of those possibilities into your API:
+
+```text
+focus_on_security=true
+ignore_frontend=true
+previous_hypothesis=...
+```
+
+That doesn’t scale particularly well.
+
+Context gives the caller a semantically rich way to steer the reasoning
+system while still leaving the inner system responsible for its invariants,
+tools, budgets and control loop.
+
+Consider the PR review tool: Initially, this would take a PR URL and kick
+off the review graph. The graph could do things like clone the repo, create
+a worktree and orchestrate agents to review the PR. With the addition of
+the context parameter and working it into the agent prompts, we can now
+steer them.
+
+So instead of just:
+
+> Do a PR review.
+
+we can effectively say:
+
+> Do a PR review with a particular focus on security.
+
+*That example is intentionally simplistic. In practice you’d probably already
+have a security-specific reviewer in the graph. The interesting part isn’t the
+specific instruction, it’s that the caller now has a way to influence the bounded
+system without breaking the abstraction boundary.*
+
+This felt much more natural. It was far closer to just using the top-level
+harness to drive everything, but with the underlying guarantees of bounded
+agentic systems sitting behind the MCP seam.
+
+Then there was an unexpected side effect that blew my mind.
+
+## The unexpected wonderful side effect
+
+Consider another MCP tool: `investigate_alert`.
+
+The conversational harness pulls together whatever context it needs using its
+own available tools (Slack, WebFetch, PagerDuty, ticketing systems, deployment
+history, whatever else happens to be available) and feeds relevant context to
+the tool.
+
+The MCP tool itself is a bounded agentic system. It employs tool-call limits,
+total token budgets and other constraints. It has access to logs, metrics,
+traces and whatever other systems are used for observability. Because it is
+bounded though, the result of an investigation may occasionally be inconclusive.
+
+Before adding the context parameter, that was more or less the end of the
+line. The bounded system had done what it could within its limits. But now
+the conversational harness could do something much more interesting.
+
+It could inspect the result. Reason about what was missing. Gather more information.
+**Then invoke the *same bounded system again* with a narrower piece of contextual
+guidance.**
+
+Wat?
+
+Yeah, watching that happen is where my mind blew a little bit.
+
+For example:
+
+```text
+Initial investigation:
+No conclusive root cause. Elevated latency appears correlated with
+requests routed through eu-west-1.
+```
+
+The outer harness can now pivot:
+
+```text
+Re-run the investigation focusing specifically on eu-west-1.
+Compare the deployment timeline against the start of the latency increase.
+```
+
+The bounded system runs again. Maybe that result rules out the deployment
+but identifies elevated calls to another dependency. So the harness calls
+it again:
+
+```text
+Focus specifically on dependency X.
+The previous investigation found no evidence linking the deployment to the
+incident. Revisit that if new evidence points back to it.
+```
+
+And so on.
+
+There’s a catch, of course: A bounded run doesn’t make the whole conversation
+bounded. The outer harness still needs an overall budget and a point at which
+it stops investigating. Otherwise it can just keep buying another bounded attempt.
+
+The important thing is that the outer harness isn’t taking
+over the inner system’s job. It is progressively narrowing the search space.
+The PR example made the immediate benefit obvious: context lets the caller
+steer a bounded system. The alert investigation revealed something more interesting:
+
+**Context lets the caller steer that system iteratively.**
+
+What I had accidentally built looked something like this:
+
+<img
+  src={contextControlLoop.src}
+  alt="The conversational harness is the outer harness: it reasons, gathers context and refines or redirects requests. It sends context and a request to the bounded inner system, which enforces its tools, budgets and limits. The result returns directly to the same conversational harness, within an overall budget and stopping condition."
+  width={800}
+  height={690}
+/>
+
+> The outer harness owns **adaptive strategy**.<br/>
+> The inner harness owns **bounded execution**.<br/>
+> Context is the control surface between them.
+
+That, to me, is the interesting part.
+
+## Context as a control surface
+
+There’s an important caveat here: By “context,” I don’t mean “blindly
+append arbitrary untrusted text into a privileged system prompt and hope
+for the best.”
+
+The inner system should still own its invariants. Its permissions.
+Its available tools. Its token and tool-call budgets. Its safety boundaries.
+Its deterministic orchestration where determinism actually matters. Context
+is guidance *within* those boundaries, not a mechanism for redefining them.
+
+The runtime still enforces the tool allowlist and call budget.
+Asking nicely (or very insistently) in the context parameter doesn’t
+change either. That separation lets you preserve something I’ve found increasingly valuable.
+You don’t have to choose between a completely software-owned orchestration
+loop and throwing the entire problem at an unconstrained conversational agent.
+You can put an adaptive reasoning layer around bounded, software-owned agentic systems.
+If those systems expose a meaningful contextual interface, the outer harness can
+repeatedly steer them toward a useful result without taking ownership of their
+internal execution.
+
+That gives you something that feels remarkably close to working directly with an
+LLM while preserving the durability, observability and boundedness of a
+software-owned control loop. The inner harness doesn’t need to know how to
+solve every possible version of the problem. It needs to expose a bounded,
+durable capability that can be repeatedly steered by the outer harness.
+
+That’s the part I hadn’t fully appreciated before.
+
+**Context isn’t just additional information for an agent. Between two harnesses, it becomes a control surface.**
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../../components/Callout.astro';
+    import Terminal from '../../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}

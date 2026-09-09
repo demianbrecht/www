@@ -1,0 +1,3 @@
+Generated with the built-in image generation tool.
+
+Use case: stylized-concept. Create a cinematic 16:9 hero image for a personal engineering blog post, Context as a Control Surface. Show a precision mechanical core held inside a larger adjustable control ring, with a narrow amber light channel entering the core and a second illuminated path returning to the outer ring, suggesting iterative guidance and feedback. Dark charcoal backdrop, weathered teal metal housing, ivory inner mechanism, restrained amber light, realistic industrial materials. Three-quarter cutaway view, strong central silhouette, generous margins for cropping. Evoke cooperation between nested systems while the inner enclosure stays intact. No text, logos, humanoid robots, or watermarks.

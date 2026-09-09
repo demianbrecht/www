@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="690" viewBox="0 0 800 690" role="img" aria-labelledby="title description">
+  <title id="title">Context as a control surface</title>
+  <desc id="description">Two harnesses exchange a request and a result. The conversational harness is the outer harness: it reasons, gathers context and refines or redirects requests within an overall budget and stopping condition. It sends context and a request to the bounded inner system, which enforces its tools, budgets and limits through a software-owned execution loop. The result returns directly to the same conversational harness for refinement.</desc>
+
+  <defs>
+    <marker id="request-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M1 1 9 5 1 9Z" fill="#4a9eff"/>
+    </marker>
+    <marker id="feedback-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M1 1 9 5 1 9Z" fill="#d9a038"/>
+    </marker>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-anchor: middle; }
+    .heading { fill: #e6e9ee; font-size: 30px; font-weight: 650; }
+    .body { fill: #b6bfcb; font-size: 24px; }
+    .note { fill: #a3abb8; font-size: 20px; }
+    .pill { fill: #e6e9ee; font-size: 23px; font-weight: 600; }
+    .request { fill: none; stroke: #4a9eff; stroke-width: 3; marker-end: url(#request-arrow); }
+    .feedback { fill: none; stroke: #d9a038; stroke-width: 3; stroke-linejoin: round; marker-end: url(#feedback-arrow); }
+  </style>
+
+  <rect width="800" height="690" rx="12" fill="#14171c"/>
+
+  <rect x="60" y="32" width="650" height="234" rx="18" fill="#1b2028" stroke="#526170" stroke-width="2"/>
+  <text x="385" y="82" class="heading">Conversational harness</text>
+  <text x="385" y="114" class="note">Outer harness · adaptive strategy</text>
+  <text x="385" y="158" class="body">Reason · gather context</text>
+  <text x="385" y="198" fill="#e6b65f" font-size="24">Refine / redirect</text>
+  <text x="385" y="238" class="note">Overall budget + stopping condition</text>
+
+  <path d="M385 266V398" class="request"/>
+  <rect x="186" y="306" width="398" height="52" rx="12" fill="#1b2938" stroke="#4a9eff" stroke-width="1.5"/>
+  <text x="385" y="341" fill="#7cbaff" font-size="27" font-weight="600">Context + request</text>
+
+  <rect x="60" y="398" width="650" height="258" rx="18" fill="#151e28" stroke="#4a9eff" stroke-width="2"/>
+  <text x="385" y="446" class="heading">Bounded agentic system</text>
+  <text x="385" y="486" class="body">Software-owned execution loop</text>
+
+  <g fill="#212c39" stroke="#435a73" stroke-width="1.5">
+    <rect x="98" y="518" width="174" height="54" rx="10"/>
+    <rect x="298" y="518" width="174" height="54" rx="10"/>
+    <rect x="498" y="518" width="174" height="54" rx="10"/>
+  </g>
+  <text x="185" y="553" class="pill">Tools</text>
+  <text x="385" y="553" class="pill">Budgets</text>
+  <text x="585" y="553" class="pill">Limits</text>
+  <text x="385" y="623" class="note">Enforced on every invocation</text>
+
+  <path d="M710 527H737Q755 527 755 509V212Q755 194 737 194H710" class="feedback"/>
+  <text x="689" y="341" fill="#e6b65f" font-size="25">Result</text>
+</svg>
