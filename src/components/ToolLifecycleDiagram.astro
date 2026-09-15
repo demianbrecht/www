@@ -1,0 +1,378 @@
+<figure class="lifecycle" aria-labelledby="lifecycle-title" aria-describedby="lifecycle-caption">
+  <div class="figure-title" id="lifecycle-title">Two tool interfaces, two lifecycles</div>
+
+  <div class="lanes">
+    <section class="lane" aria-labelledby="ephemeral-title">
+      <header class="lane-heading">
+        <span class="lane-marker" aria-hidden="true"></span>
+        <div>
+          <h4 id="ephemeral-title">Ephemeral</h4>
+          <p>One continuous request</p>
+        </div>
+      </header>
+
+      <ol class="steps steps-ephemeral" aria-label="Prompt, then tool call, then result">
+        <li class="step"><span>Prompt</span></li>
+        <li class="step"><span>Tool call</span></li>
+        <li class="step step-terminal"><span>Result</span></li>
+      </ol>
+    </section>
+
+    <section class="lane" aria-labelledby="durable-title">
+      <header class="lane-heading">
+        <span class="lane-marker" aria-hidden="true"></span>
+        <div>
+          <h4 id="durable-title">Durable</h4>
+          <p>Revisited across requests</p>
+        </div>
+      </header>
+
+      <div class="durable-flow">
+        <ol
+          class="steps steps-durable"
+          aria-label="Prompt, create, task ID, repeated status checks, optional preview, then commit"
+        >
+          <li class="step"><span>Prompt</span></li>
+          <li class="step"><span>Create</span></li>
+          <li class="step"><span>Task ID</span></li>
+          <li class="step step-get">
+            <span>Get</span>
+            <small><span class="loop-mark" aria-hidden="true">↻</span> while running</small>
+          </li>
+          <li class="step step-optional">
+            <span>Preview</span>
+            <small>if needed</small>
+          </li>
+          <li class="step step-terminal"><span>Commit</span></li>
+        </ol>
+
+        <div
+          class="persisted-state"
+          role="group"
+          aria-label="The task is persisted from creation until commit or cancel"
+        >
+          <span class="persisted-end">Create</span>
+          <span class="persisted-line" aria-hidden="true"></span>
+          <span class="persisted-label">persisted operation</span>
+          <span class="persisted-line" aria-hidden="true"></span>
+          <span class="persisted-end">Commit or cancel</span>
+        </div>
+
+        <div
+          class="cancel-branch"
+          role="group"
+          aria-label="Cancel is an alternate exit while the operation is active"
+        >
+          <span class="branch-arrow" aria-hidden="true">↳</span>
+          <span class="cancel-step">Cancel</span>
+          <span class="branch-label">alternate exit while active</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <figcaption id="lifecycle-caption">
+    Immediate work completes inside one request. Durable work returns a task ID that can be checked,
+    optionally previewed, committed, or cancelled later.
+  </figcaption>
+</figure>
+
+<style>
+  .lifecycle {
+    margin: 2rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .figure-title {
+    margin-bottom: 0.8rem;
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .lanes {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+
+  .lane {
+    display: grid;
+    grid-template-columns: minmax(8.5rem, 0.8fr) minmax(0, 3.2fr);
+    gap: 1rem;
+    align-items: center;
+    padding: 1.15rem;
+  }
+
+  .lane + .lane {
+    border-top: 1px solid var(--border);
+  }
+
+  .lane-heading {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .lane-marker {
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-top: 0.42rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-muted);
+    flex: none;
+  }
+
+  .lane-heading h4 {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+
+  .lane-heading p {
+    margin: 0.12rem 0 0;
+    color: var(--text-fainter);
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  .steps {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .steps-ephemeral {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .steps-durable {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .step {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.3rem;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    background: var(--bg-inset);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: clamp(0.62rem, 1.45vw, 0.72rem);
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .step-terminal {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+    color: var(--text);
+  }
+
+  .step:not(:last-child)::after {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: calc(100% + 0.1rem);
+    width: 0.7rem;
+    color: var(--border-lit);
+    content: "→";
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1;
+    text-align: center;
+    transform: translateY(-50%);
+    animation: trace-arrow 6s ease-in-out infinite both;
+  }
+
+  .step:nth-child(2)::after { animation-delay: 550ms; }
+  .step:nth-child(3)::after { animation-delay: 1100ms; }
+  .step:nth-child(4)::after { animation-delay: 1650ms; }
+  .step:nth-child(5)::after { animation-delay: 2200ms; }
+
+  .step-get,
+  .step-optional {
+    flex-direction: column;
+    gap: 0.12rem;
+  }
+
+  .step small {
+    color: var(--text-fainter);
+    font-family: var(--font-sans);
+    font-size: 0.58rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .loop-mark {
+    display: inline-block;
+    color: var(--accent);
+    animation: turn-once 6s 1650ms ease-in-out infinite both;
+  }
+
+  .durable-flow {
+    min-width: 0;
+  }
+
+  .persisted-state {
+    display: grid;
+    grid-template-columns: auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 1fr) auto;
+    gap: 0.45rem;
+    align-items: center;
+    margin: 0.75rem 0 0 calc((100% - 4.5rem) / 6);
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    line-height: 1.2;
+  }
+
+  .persisted-line {
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+
+  .persisted-label {
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .persisted-end {
+    white-space: nowrap;
+  }
+
+  .cancel-branch {
+    display: flex;
+    min-height: 1.75rem;
+    gap: 0.45rem;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0.55rem 0 0 calc((100% - 4.5rem) / 2);
+    color: var(--text-fainter);
+    font-size: 0.65rem;
+  }
+
+  .branch-arrow {
+    color: var(--border-lit);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .cancel-step {
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    background: var(--bg-inset);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+    color: var(--text-fainter);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  @keyframes trace-arrow {
+    0%, 10%, 100% { color: var(--border-lit); text-shadow: none; }
+    5% { color: var(--accent); text-shadow: 0 0 0.45rem var(--accent); }
+  }
+
+  @keyframes turn-once {
+    0%, 12%, 100% { transform: rotate(0deg); }
+    8% { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 44rem) {
+    .lane {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+
+    .lane-heading {
+      align-items: center;
+    }
+
+    .lane-marker {
+      margin-top: 0;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .lifecycle {
+      padding: 0.75rem;
+    }
+
+    .lane {
+      padding: 1rem;
+    }
+
+    .steps {
+      grid-template-columns: 1fr;
+      gap: 0.95rem;
+    }
+
+    .step {
+      min-height: 2.15rem;
+      font-size: 0.72rem;
+    }
+
+    .step:not(:last-child)::after {
+      top: calc(100% + 0.08rem);
+      left: 50%;
+      width: auto;
+      content: "↓";
+      transform: translateX(-50%);
+    }
+
+    .persisted-state {
+      grid-template-columns: auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 1fr) auto;
+      margin-left: 0;
+    }
+
+    .persisted-end {
+      display: none;
+    }
+
+    .persisted-line {
+      min-width: 0;
+    }
+
+    .persisted-state::before,
+    .persisted-state::after {
+      color: var(--text-fainter);
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      white-space: nowrap;
+    }
+
+    .persisted-state::before { content: "Create"; }
+    .persisted-state::after { content: "Commit / cancel"; }
+
+    .cancel-branch {
+      justify-content: flex-start;
+      margin-left: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step:not(:last-child)::after,
+    .loop-mark {
+      animation: none;
+    }
+  }
+</style>

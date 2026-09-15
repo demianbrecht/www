@@ -6,10 +6,13 @@ description: >-
 pubDate: 2026-09-14
 tags: ['ai-engineering', 'agentic-workflows', 'mcp', 'software-architecture', 'developer-workflow']
 draft: false
+heroImage: ../../assets/posts/dude-how-does-this-help-me.png
+heroImageAlt: 'A human operates a central control hub connecting user stories, code review, runtime QA, and incident investigation workflows'
 ---
 
 import Callout from '../../components/Callout.astro';
 import PatternPills from '../../components/PatternPills.astro';
+import ToolLifecycleDiagram from '../../components/ToolLifecycleDiagram.astro';
 
 I've been tinkering a lot with models and harnesses over the last while,
 particularly from a local DX perspective. DX tooling has always been of great
@@ -78,6 +81,8 @@ Ephemeral tasks are exposed as a single MCP tool. Long lived tools use an async
 protocol with the following lifecycle stages (`create`, `get`, `cancel`,
 `commit` (optional)). This interface allows the conversational harness to manage
 the lifecycle of a task given an opaque task ID as a response to `create`.
+
+<ToolLifecycleDiagram />
 
 The benefits and a deeper dive of the ephemeral vs. long-lived tool interface
 can be found in [The Harness within the
