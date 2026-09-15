@@ -1,0 +1,48 @@
+---
+interface Props {
+  patterns: string[];
+}
+
+const { patterns } = Astro.props;
+---
+
+<nav class="pattern-pills" aria-label="Patterns used">
+  <span class="label">Patterns:</span>
+  {patterns.map((pattern) => <a href="#the-patterns">{pattern}</a>)}
+</nav>
+
+<style>
+  .pattern-pills {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 1.15rem;
+  }
+
+  .label {
+    margin-right: 0.1rem;
+    color: var(--text-fainter);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  a:hover {
+    border-color: var(--border-lit);
+    color: var(--text);
+    text-decoration: none;
+  }
+</style>

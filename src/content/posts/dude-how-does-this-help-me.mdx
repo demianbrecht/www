@@ -1,0 +1,306 @@
+---
+title: 'Dude, how does this help me?'
+description: >-
+    Putting the pieces together: how I’m using agentic systems in my 
+    daily workflow and the patterns that have stuck along the way.
+pubDate: 2026-09-14
+tags: ['ai-engineering', 'agentic-workflows', 'mcp', 'software-architecture', 'developer-workflow']
+draft: false
+---
+
+import Callout from '../../components/Callout.astro';
+import PatternPills from '../../components/PatternPills.astro';
+
+I've been tinkering a lot with models and harnesses over the last while,
+particularly from a local DX perspective. DX tooling has always been of great
+interest to me. How can I improve my own life by automating the boring things?
+Bringing AI into the equation has made the work that much more interesting.
+I've thrown a fair amount of shit at the wall to see what sticks. Some things have been 
+successful, many others have failed. Like all failures though, learnings
+were had. I've written about a number of them and shared. However, each piece,
+each learning has more or less existed in isolation. While each piece speaks
+to the learnings, designs and architecture, there isn't a piece putting it all
+together.
+
+**How do I actually use this stuff on a daily basis, or is it vaporware?**
+
+No, it most definitely is not.
+
+## The mindset shift
+When I start tackling a problem, I don't jump right to prose and hand
+it off to an agent to run. I look at the nature of the problem I'm trying to
+solve. Prior to the explosion of LLMs, is this something that I'd want to
+automate for myself or something that requires me to drive? If it's something I
+would have previously automated, that signals to me that it's something that can
+be implemented in code. It does not actually need an LLM to run every time. On
+the other hand, if I was previously driving then that should be a task for the
+LLM. I've written about this in more detail
+[here](/posts/the-division-of-the-local-harnesses/#who-owns-the-control-loop).
+
+It's important to note that *these are not mutually exclusive*. A workflow can
+have deterministic topology that has non-deterministic subtasks. Similarly, a
+workflow can also be entirely judgement-driven but have deterministic subtasks.
+
+
+### The patterns
+
+Following this mindset shift has led me to find a few emerging patterns that
+I've seen recurring over a number of different problem spaces.
+
+| Pattern | Description |
+|---------|-------------|
+| [Harness within a harness](/posts/the-harness-within-the-harness/) | Using MCP as a seam between a conversational agent and a software-defined agentic system |
+| [Context as a control surface](/posts/context-as-a-control-surface/) | Passing arbitrary context into the inner harness so the outer agent can steer successive executions |
+| [Runtime system harness](/posts/runtime-qa-give-the-agent-the-loop-not-the-last-word/) | Giving agents a production-like environment, tools and operational knowledge for end-to-end runtime analysis and QA |
+| [Deterministic graph, agentic nodes](/posts/the-division-of-the-local-harnesses/#who-owns-the-control-loop) | Defining workflow topology in software while delegating bounded judgement-heavy stages to agents |
+
+### The seam and the tools
+
+These patterns are great and all, but the "harness within a harness" is key for
+my current work. This is what allows me to have a conversational harness (one
+and the same as your daily coding harness - Claude Code, codex et al.) that
+drives an underlying agentic system. The seam is MCP.
+
+The coding harness is my peer. It's who I bounce ideas off of. It's who pulls
+together context for me from various sources: Slack, user stories, email, etc.
+The coding harness is who will typically write my code, conduct research and
+execute runtime QA for me against work done.
+
+My repeatable tasks, be they agentic, deterministic or a blend, live as MCP
+tools. Using MCP allows me to quickly and easily swap between top level
+harnesses while the underlying functionality stays consistent. The agentic
+systems built underneath (I used FastMCP and LangGraph for mine) allow me to
+build out graph-based workflows, constrain costs by using specific models for
+specific tasks and engineer context for multi-agent workflows. 
+
+Tools exposed to the conversational harness are either ephemeral or long lived.
+Ephemeral tasks are exposed as a single MCP tool. Long lived tools use an async
+protocol with the following lifecycle stages (`create`, `get`, `cancel`,
+`commit` (optional)). This interface allows the conversational harness to manage
+the lifecycle of a task given an opaque task ID as a response to `create`.
+
+The benefits and a deeper dive of the ephemeral vs. long-lived tool interface
+can be found in [The Harness within the
+harness](/posts/the-harness-within-the-harness/).
+
+<Callout type="info">
+There are a couple things to be aware of with this approach.
+
+1. The lifecycle of a task is driven by the LLM being used by the
+conversational harness even if the inner workflow is not. 
+This can lead to unexpected behaviour at times.
+2. Task IDs returned by a tool `create` will be stored by the LLM in a user
+context and therefore is subject to compaction-related issues.
+
+**The [MCP task
+extension](https://modelcontextprotocol.io/extensions/tasks/overview) has significant
+overlap with much of my approach here,
+but is not available across frontier harnesses as
+of this writing.** Once available, the hope is that there isn't much effort
+required to migrate to MCP tasks.
+</Callout>
+
+<Callout type="warn">
+**Not all tools need to be behind this seam! It all depends on the nature of the
+problem as we'll see in the next section.**
+</Callout>
+
+## Daily life
+Enough talk! What does my daily workflow actually look like with all of this
+stuff employed?
+
+### Creating user stories
+I have an MCP `user_story_create` tool that will create a user story
+against our internal system. This is an ephemeral tool and has a deterministic
+topology. However, thinking about the human workflow made me realize I also
+needed a helper: `user_story_draft`. Drafting takes a number of parameters (i.e.
+assignee, title, description, etc), validates the parameters, does lookups as
+needed and then composes a draft based on an internal template and renders it to
+the conversational harness. Drafts are persisted temporarily.
+`user_story_create` then commits the draft to the system and provides the
+relevant link and other data to the conversational harness. In practice, it
+might look something like this:
+
+```
+Create a user story using the context from this Slack thread: [URL]. Assign it
+to me and give it 3 story points.
+```
+
+The story is created deterministically using a template. Every story created has
+the same structure, increasing readability. The same models are used for the
+same subtasks *every time*.
+
+<PatternPills patterns={[
+  'harness within a harness',
+  'deterministic graph, agentic nodes',
+]} />
+
+### PR reviews
+This is a more complex tool. It is long lived and durable, so it observes the
+async protocol described above. This doesn't just hand off a PR review to a
+model. It clones the repo, creates a git worktree, computes the diff locally and
+then reviews. The review loop is comprised of multi-model-family reviews across
+multiple dispositions. Multiple loops to review, deliberation with other models
+and finally aggregation, preview and posting to GitHub.
+
+This is graph and context engineering rolled into a set of related tools. What
+it looks like in practice is:
+
+```
+Review this PR: [URL]
+```
+
+I use this for an initial review of my own work. Because of the async interface
+design, the conversational harness will preview the findings and if it's
+something I'm actively working on, will typically suggest making the changes
+before posting the review. I also use it as a backup for review peer work. I
+feel fairly comfortable leaving the syntax and functional review to the
+automated process. I can spend my time and effort on the part that really takes
+*my* judgement: the intent of the change.
+
+<PatternPills patterns={[
+  'harness within a harness',
+  'context as a control surface',
+  'deterministic graph, agentic nodes',
+]} />
+
+### Runtime QA
+
+Runtime QA is a little different. Instead of reaching an inner harness through
+MCP, the conversational harness is given a production-like local environment
+that it can operate directly. The environment runs the real services and keeps
+the process and dependency boundaries that matter in production. This gives the
+agent something it can actually break, observe and restore rather than asking it
+to reason about runtime behaviour from code alone.
+
+When a change is ready, my prompt is usually about as exciting as:
+
+```
+Runtime QA this PR: [URL]
+```
+
+The agent reads the change and creates two artifacts: a test plan containing its
+model of the change and a small, plan-specific harness containing the repeatable
+mechanics. Before running a new or changed harness it summarizes what will happen
+and waits for approval. From there it drives the loop: establish a healthy
+baseline, introduce the relevant failure, observe the system, restore it and
+follow the evidence when the result doesn't match the plan.
+
+Each run produces a timestamped result containing the revision tested, expected
+and observed behaviour, findings, anything that was skipped and whether the
+environment was healthy when the run finished. When another set of commits
+arrives, I can run the same plan again and compare the results instead of
+reconstructing the afternoon from shell history. I go into this in much more
+detail in [Runtime QA: Give the Agent the Loop, Not the Last
+Word](/posts/runtime-qa-give-the-agent-the-loop-not-the-last-word/).
+
+<PatternPills patterns={['runtime system harness']} />
+
+### Incident investigation
+
+Incident investigation usually starts with a page or a noisy thread containing
+half the story. The conversational harness first pulls that material together
+with the affected environment, a bounded time window and whatever alert, request
+or deployment identifiers are available. An intake tool checks whether that
+dossier is actionable. If it isn't, the conversational harness can gather the
+missing context or ask me for it before starting an expensive investigation.
+
+In practice, the handoff is still simple:
+
+```
+Investigate the incident described in this thread: [URL]. Ignore all but the EU
+region as that's the only impacted one right now.
+```
+
+The investigation itself is long lived and durable. An investigator works from
+the dossier using read-only access to metrics, logs and the exact version of the
+deployed source. It tries to establish what happened, the impact and the
+best-supported root cause. A separate model then tries to falsify that result.
+If it finds unsupported claims, contradictions or missing checks, its feedback
+is routed back through another bounded investigation pass. Sometimes the honest
+answer at the end is still *inconclusive*, which is considerably more useful
+than a confident story built on a gap in the evidence.
+
+Inconclusive doesn't have to mean done. The conversational harness can use the
+result as context for the next attempt, narrowing the time window, focusing on a
+specific signal or adding evidence that wasn't available in the first pass. In
+this way, context becomes the control surface: I can steer successive
+investigations through conversation while the underlying workflow stays bounded
+and repeatable.
+
+The result includes the evidence, hypotheses ruled out, limitations and follow-up
+work. If I've supplied an incident thread, the workflow also prepares the exact
+reply it wants to post and stops at a preview. The conversational harness shows
+me that reply, but nothing is published until I explicitly commit it. The agent
+gets the investigative loop; I keep the last word on the conclusion that leaves
+the system.
+
+<PatternPills patterns={[
+  'harness within a harness',
+  'context as a control surface',
+  'deterministic graph, agentic nodes',
+]} />
+
+### What about coding?
+You may notice that coding tasks were omitted from the examples above. That’s intentional.
+Coding is still a highly dynamic and judgement-heavy activity. There may be 
+deterministic parts of the workflow around it (creating a user story, running tests,
+validating runtime behaviour, reviewing a diff) but I haven’t found much value 
+in trying to encode the entire coding process itself as a fixed end-to-end workflow.
+The shape of the work changes too much depending on the problem. Sometimes the 
+agent needs to explore. Sometimes it needs to ask questions. Sometimes it 
+needs to read half the repository before touching anything. Sometimes the 
+right answer is to make a tiny change and move on.
+
+So rather than baking the whole process into a graph, I prefer to expose the
+repeatable pieces as composable tools and let the conversational harness decide
+how and when to use them. The deterministic parts stay deterministic. The
+judgement-heavy control loop stays with the model.
+
+### Why not skills?
+You may also notice that there is only one section above that really talks
+about skills: Runtime QA. This is mostly a consequence of where I’ve chosen 
+to put the system boundary. Skills are great for giving a harness 
+instructions, conventions and reusable behaviour. But for the kinds of 
+workflows I’m describing here, I usually want more than instructions. I 
+want code, dependencies, tests, model selection, context engineering, 
+durable state, lifecycle management and CI to all live together behind 
+a stable interface.
+
+MCP gives me that boundary.
+
+Instead of teaching every conversational harness how my PR reviewer,
+incident investigator or user-story workflow works, I expose the 
+capability through MCP and keep the implementation behind it. 
+The outer harness only needs to understand the interface. The underlying
+system can evolve independently.
+
+There’s also a portability benefit. I don’t want to re-architect the 
+same workflow around the conventions of whichever coding harness I happen
+to be using this month. Keeping the implementation behind MCP means I 
+can move between Claude Code, codex or whatever comes next without moving
+the actual system with it. That doesn’t make skills bad or MCP inherently
+better. They solve different problems. If what I need is mostly reusable 
+guidance for an agent, a skill can be the right abstraction. If what I
+need is a repeatable software-defined system with its own runtime and 
+guarantees, I prefer putting that system behind MCP.
+
+## It's still early!
+This isn't **the** architecture, I'm not promoting it as such.
+This is the shit that has stuck on the wall with the various experiments I've
+tried thus far, the mindset I've adopted when working on agentic systems and the
+patterns that have emerged while doing so.
+
+The ground is shifting so rapidly in AI that it’s hard to keep up. Feel free to reach out
+over available channels about approaches you're taking or just to heckle. I'm
+super keen to hear what others are up to!
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../components/Callout.astro';
+    import Terminal from '../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}
