@@ -11,8 +11,8 @@ const baseUrl = import.meta.env.BASE_URL;
   <div class="wrap">
     <span>&copy; {year} {AUTHOR}</span>
     <span>
-      <a href={url('rss.xml', baseUrl)}>rss</a> &middot;
-      <a href={url('archive', baseUrl)}>archive</a>
+      <a class="signal-link" href={url('rss.xml', baseUrl)}>rss</a> &middot;
+      <a class="signal-link" href={url('archive', baseUrl)}>archive</a>
     </span>
   </div>
 </footer>

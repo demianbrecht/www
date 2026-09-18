@@ -10,7 +10,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
 <header class="site-header">
   <div class="wrap">
-    <a class="brand" href={url('/', baseUrl)}>{SITE_TITLE}</a>
+    <a class="brand signal-link" href={url('/', baseUrl)}>{SITE_TITLE}</a>
     <nav class="site-nav" aria-label="Main">
       {NAV_LINKS.map(({ href, label }) => {
         const target = href.replace(/\/$/, '') || '/';
@@ -18,7 +18,7 @@ const baseUrl = import.meta.env.BASE_URL;
           ? current === '/'
           : current === target || current.startsWith(`${target}/`);
         return (
-          <a href={url(href, baseUrl)} aria-current={isCurrent ? 'page' : undefined}>
+          <a class="signal-link" href={url(href, baseUrl)} aria-current={isCurrent ? 'page' : undefined}>
             {label}
           </a>
         );

@@ -19,7 +19,7 @@ const links = shareLinks(url, title);
       link.href ? (
         <li>
           <a
-            class="share-link"
+            class="share-link signal-link"
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
@@ -29,7 +29,7 @@ const links = shareLinks(url, title);
         </li>
       ) : (
         <li>
-          <button class="share-link" type="button" data-copy-link>
+          <button class="share-link signal-link" type="button" data-copy-link>
             {link.label}
           </button>
         </li>

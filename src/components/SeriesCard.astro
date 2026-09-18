@@ -25,7 +25,7 @@ const baseUrl = import.meta.env.BASE_URL;
       <li>
         <span class="part">Part {part}</span>
         <div>
-          <a href={postUrl(post.id, baseUrl)}>{post.data.title}</a>
+          <a class="signal-link" href={postUrl(post.id, baseUrl)}>{post.data.title}</a>
           <OriginalPublication publication={post.data.originallyPublished} />
         </div>
       </li>

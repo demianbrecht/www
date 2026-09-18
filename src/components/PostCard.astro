@@ -20,7 +20,7 @@ const baseUrl = import.meta.env.BASE_URL;
     {draft && (<><span class="sep">/</span><span style="color: var(--status-warn)">draft</span></>)}
   </div>
 
-  <a class="post-title-link" href={postUrl(post.id, baseUrl)}>
+  <a class="post-title-link signal-link" href={postUrl(post.id, baseUrl)}>
     <h2>{title}</h2>
   </a>
 

@@ -112,17 +112,18 @@ Routes generated: `/`, `/archive`, `/tags`, `/tags/<tag>`, `/about`,
 ## Theming
 
 Dark and deliberately restrained: a neutral slate ramp (`#14171c` → `#21262e`)
-with a single blue accent (`#4a9eff`) for links and focus rings, plus amber, red,
-and green reserved for status. Hierarchy comes from type scale, weight, and
-spacing rather than colour.
+with a phosphor-mint accent (`#62ffc6`) for links and focus rings, plus amber,
+red, and green reserved for status. Monospace interface type and headings frame
+readable sans-serif article prose.
 
 All colour and type lives in CSS custom properties at the top of
 `src/styles/global.css` — edit `--bg`, `--accent`, `--text`, `--border`, and the
 font stacks to reskin the site. Code blocks use Shiki's `github-dark-default`
 theme, set in `astro.config.mjs`.
 
-There are no decorative effects or ambient animations; the only transitions are
-short hover and focus states, and those respect `prefers-reduced-motion`.
+Subtle CRT scanlines, edge falloff, drifting glow, and occasional signal tears
+provide atmosphere without moving the content. All ambient animation respects
+`prefers-reduced-motion`.
 
 Type is the system stack — `-apple-system`/`Segoe UI` for prose and `SF Mono`/
 `Menlo` for code and UI labels. No webfonts are downloaded.

@@ -100,13 +100,13 @@ const shareUrl = new URL(Astro.url.pathname, Astro.site).href;
         {(prev || next) && (
           <nav class="post-nav" aria-label="More posts">
             {next ? (
-              <a href={postUrl(next.id, import.meta.env.BASE_URL)}>
+              <a class="signal-link" href={postUrl(next.id, import.meta.env.BASE_URL)}>
                 <span class="dir">&larr; {nextLabel}</span>
                 {next.data.title}
               </a>
             ) : <span />}
             {prev ? (
-              <a href={postUrl(prev.id, import.meta.env.BASE_URL)} style="text-align: right">
+              <a class="signal-link" href={postUrl(prev.id, import.meta.env.BASE_URL)} style="text-align: right">
                 <span class="dir">{prevLabel} &rarr;</span>
                 {prev.data.title}
               </a>

@@ -38,7 +38,7 @@ const monthDay = (d: Date) =>
                   {monthDay(post.data.pubDate)}
                 </time>
                 <div>
-                  <a href={postUrl(post.id, import.meta.env.BASE_URL)}>{post.data.title}</a>
+                  <a class="signal-link" href={postUrl(post.id, import.meta.env.BASE_URL)}>{post.data.title}</a>
                   <OriginalPublication publication={post.data.originallyPublished} />
                 </div>
               </li>
