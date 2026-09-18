@@ -709,7 +709,7 @@ main {
 
 .newsletter-embed {
   flex: 1 1 22rem;
-  max-width: 26rem;
+  max-width: 37rem;
   margin-left: auto;
 }
 
@@ -721,10 +721,20 @@ main {
   background: transparent !important;
 }
 
+.newsletter-embed .formkit-form > [data-style] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 8.3125rem;
+  align-items: center !important;
+  gap: 0 0.65rem !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
 .newsletter-embed .formkit-fields {
   display: flex !important;
   align-items: stretch !important;
   gap: 0.45rem !important;
+  min-width: 0 !important;
 }
 
 .newsletter-embed .formkit-field {
@@ -758,6 +768,7 @@ main {
 .newsletter-embed .formkit-submit {
   flex: 0 0 auto !important;
   min-height: 2rem !important;
+  margin: 0 !important;
   padding: 0.35rem 0.75rem !important;
   border: 1px solid var(--accent) !important;
   border-radius: var(--radius) !important;
@@ -769,15 +780,30 @@ main {
   cursor: pointer !important;
 }
 
+.newsletter-embed .formkit-submit > span {
+  padding: 0 !important;
+}
+
 .newsletter-embed .formkit-submit:is(:hover, :focus-visible) {
   background: rgba(98, 255, 198, 0.2) !important;
   box-shadow: 0 0 0.7rem rgba(98, 255, 198, 0.14) !important;
 }
 
 .newsletter-embed .formkit-alert {
+  grid-column: 1 / -1;
   margin: 0 0 0.35rem !important;
   color: var(--text-dim) !important;
   font: 0.7rem/1.4 var(--font-mono) !important;
+}
+
+.newsletter-embed .formkit-powered-by-convertkit-container {
+  grid-column: 2;
+  width: 8.3125rem !important;
+  margin: 0 !important;
+}
+
+.newsletter-embed .formkit-powered-by-convertkit {
+  margin: 0 !important;
 }
 
 @media (max-width: 42rem) {
@@ -791,6 +817,18 @@ main {
     flex-basis: 100%;
     max-width: none;
     margin: 0.25rem 0 0;
+  }
+}
+
+@media (max-width: 34rem) {
+  .newsletter-embed .formkit-form > [data-style] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem !important;
+  }
+
+  .newsletter-embed .formkit-powered-by-convertkit-container {
+    grid-column: 1;
+    justify-self: end;
   }
 }
 
