@@ -1,6 +1,7 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
 import Footer from '../components/Footer.astro';
 
 import type { ImageMetadata } from 'astro';
@@ -36,6 +37,7 @@ const { type, publishedDate, image } = props;
     <main id="main">
       <slot />
     </main>
+    <NewsletterSignup />
     <Footer />
   </body>
 </html>

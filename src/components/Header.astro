@@ -2,7 +2,6 @@
 import { SITE_TITLE, NAV_LINKS } from '../consts';
 import { url } from '../utils';
 import SiteTitle from './SiteTitle.astro';
-import NewsletterSignup from './NewsletterSignup.astro';
 
 /** Current path with base and trailing slash stripped, for nav highlighting. */
 const current =
@@ -29,5 +28,4 @@ const baseUrl = import.meta.env.BASE_URL;
       })}
     </nav>
   </div>
-  <NewsletterSignup />
 </header>
