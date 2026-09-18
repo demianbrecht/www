@@ -2,9 +2,11 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import OriginalPublication from '../components/OriginalPublication.astro';
-import { isVisible, byNewest, postUrl, isoDate } from '../utils';
+import SystemLabel from '../components/SystemLabel.astro';
+import { buildEntryIndex, isVisible, byNewest, postUrl, isoDate } from '../utils';
 
 const posts = (await getCollection('posts', isVisible)).sort(byNewest);
+const entryIds = buildEntryIndex(posts);
 
 // Group into [year, posts] pairs, preserving newest-first order.
 const byYear = new Map<number, typeof posts>();
@@ -22,6 +24,7 @@ const monthDay = (d: Date) =>
 
 <BaseLayout title="Archive" description="Every post, by year.">
   <div class="wrap">
+    <SystemLabel code="ARCHIVE//ALL_RECORDS" detail={`${posts.length} RECORDS`} />
     <h1>Archive</h1>
     <p class="label">{posts.length} {posts.length === 1 ? 'entry' : 'entries'}</p>
 
@@ -34,6 +37,7 @@ const monthDay = (d: Date) =>
           <ul class="archive-list">
             {entries.map((post) => (
               <li>
+                <span class="record-id">{entryIds.get(post.id)}</span>
                 <time datetime={isoDate(post.data.pubDate)}>
                   {monthDay(post.data.pubDate)}
                 </time>

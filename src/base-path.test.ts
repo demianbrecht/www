@@ -32,7 +32,7 @@ function occurrences(haystack: string, needle: string): number {
 }
 
 describe('non-root builds', () => {
-  it('renders one inline homepage series item and ordinary attributed archive entries', () => {
+  it('renders inline homepage series items and ordinary attributed archive entries', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'www-base-path-'));
 
     try {
@@ -51,7 +51,7 @@ describe('non-root builds', () => {
       const home = readFileSync(join(outDir, 'index.html'), 'utf8');
       const archive = readFileSync(join(outDir, 'archive', 'index.html'), 'utf8');
 
-      expect(occurrences(home, 'data-timeline-kind="series"')).toBe(1);
+      expect(occurrences(home, 'data-timeline-kind="series"')).toBe(2);
       expect(home).not.toContain('class="series-section"');
       expect(home).toContain('<time datetime="2018-04-04"');
 
@@ -68,8 +68,10 @@ describe('non-root builds', () => {
       expect(archive).not.toContain('class="series-section"');
       expect(home).not.toContain('Entry points in Python');
       expect(home).not.toContain('Advanced Mercurial Debugging');
+      expect(home).not.toContain('My learnings on delivering technical presentations');
       expect(archive).toContain('Entry points in Python');
       expect(archive).toContain('Advanced Mercurial Debugging');
+      expect(archive).toContain('My learnings on delivering technical presentations');
       expect(occurrences(archive, 'Originally published in ')).toBe(5);
       expect(occurrences(home, 'Originally published in ')).toBe(5);
       expect(archive).toContain('Salesforce Engineering');
@@ -77,7 +79,7 @@ describe('non-root builds', () => {
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 
   it('prefixes generated links while keeping post output routes flat', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'www-base-path-'));
@@ -102,5 +104,5 @@ describe('non-root builds', () => {
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 });

@@ -1,0 +1,13 @@
+---
+interface Props {
+  code: string;
+  detail?: string;
+}
+
+const { code, detail } = Astro.props;
+---
+
+<p class="system-label">
+  <span class="system-code">{code}</span>
+  {detail && <span class="system-detail">{detail}</span>}
+</p>

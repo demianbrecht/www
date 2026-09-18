@@ -63,3 +63,19 @@ export function byNewest(a: Post, b: Post): number {
   const dateOrder = b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
   return dateOrder || a.id.localeCompare(b.id);
 }
+
+/** Stable display identifiers, assigned oldest-first so new posts append. */
+export function buildEntryIndex(posts: Post[]): ReadonlyMap<string, string> {
+  const chronological = [...posts].sort((a, b) => {
+    const dateOrder = a.data.pubDate.valueOf() - b.data.pubDate.valueOf();
+    return dateOrder || a.id.localeCompare(b.id);
+  });
+  const width = Math.max(3, String(chronological.length).length);
+
+  return new Map(
+    chronological.map((post, index) => [
+      post.id,
+      `ENTRY_${String(index + 1).padStart(width, '0')}`,
+    ]),
+  );
+}

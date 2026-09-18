@@ -3,10 +3,12 @@ import type { GetStaticPaths } from 'astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
-import { isVisible, byNewest, slugifyTag, url } from '../../utils';
+import SystemLabel from '../../components/SystemLabel.astro';
+import { buildEntryIndex, isVisible, byNewest, slugifyTag, url } from '../../utils';
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = (await getCollection('posts', isVisible)).sort(byNewest);
+  const entryIds = Object.fromEntries(buildEntryIndex(posts));
 
   // One page per tag slug. Distinct display spellings that slugify the same
   // (e.g. "Web Dev" / "web-dev") collapse onto one page; the first wins as label.
@@ -22,16 +24,17 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   return [...groups.entries()].map(([slug, { label, posts: tagged }]) => ({
     params: { tag: slug },
-    props: { label, posts: tagged },
+    props: { label, posts: tagged, entryIds },
   }));
 };
 
 interface Props {
   label: string;
   posts: CollectionEntry<'posts'>[];
+  entryIds: Record<string, string>;
 }
 
-const { label, posts } = Astro.props as Props;
+const { label, posts, entryIds } = Astro.props as Props;
 ---
 
 <BaseLayout
@@ -39,6 +42,7 @@ const { label, posts } = Astro.props as Props;
   description={`Posts tagged ${label}.`}
 >
   <div class="wrap">
+    <SystemLabel code="FILTER//TAG" detail={`${posts.length} MATCHES`} />
     <h1>#{label}</h1>
     <p class="label">
       {posts.length} {posts.length === 1 ? 'entry' : 'entries'} &middot;
@@ -47,7 +51,7 @@ const { label, posts } = Astro.props as Props;
 
     <ul class="post-list" style="margin-top: 2rem">
       {posts.map((post) => (
-        <li><PostCard {post} /></li>
+        <li><PostCard {post} entryId={entryIds[post.id]} /></li>
       ))}
     </ul>
   </div>

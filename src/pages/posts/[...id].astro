@@ -2,7 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import PostLayout from '../../layouts/PostLayout.astro';
-import { isVisible } from '../../utils';
+import { buildEntryIndex, isVisible } from '../../utils';
 import {
   buildTimeline,
   orderPostsForNavigation,
@@ -18,6 +18,7 @@ interface SeriesPresentation {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const visiblePosts = await getCollection('posts', isVisible);
+  const entryIds = buildEntryIndex(visiblePosts);
   const seriesEntries = (await getCollection('series')).map(seriesMetadata);
   const posts = orderPostsForNavigation(visiblePosts, seriesEntries);
   const timeline = buildTimeline(posts, seriesEntries);
@@ -45,6 +46,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
       params: { id: post.id },
       props: {
         post,
+        entryId: entryIds.get(post.id),
         prev: posts[i + 1],
         next: posts[i - 1],
         series: currentSeries,
@@ -57,6 +59,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  entryId: string;
   prev?: CollectionEntry<'posts'>;
   next?: CollectionEntry<'posts'>;
   series?: SeriesPresentation;
@@ -64,10 +67,10 @@ interface Props {
   nextLabel: string;
 }
 
-const { post, prev, next, series, prevLabel, nextLabel } = Astro.props as Props;
+const { post, entryId, prev, next, series, prevLabel, nextLabel } = Astro.props as Props;
 const { Content } = await render(post);
 ---
 
-<PostLayout {post} {prev} {next} {series} {prevLabel} {nextLabel}>
+<PostLayout {post} {entryId} {prev} {next} {series} {prevLabel} {nextLabel}>
   <Content />
 </PostLayout>

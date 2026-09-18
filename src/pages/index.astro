@@ -3,11 +3,14 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 import SeriesCard from '../components/SeriesCard.astro';
+import SystemLabel from '../components/SystemLabel.astro';
 import { SITE_TITLE, SITE_TAGLINE } from '../consts';
-import { isCurrent } from '../utils';
+import { buildEntryIndex, isCurrent, isVisible } from '../utils';
 import { buildTimeline, seriesMetadata } from '../timeline';
 
-const posts = await getCollection('posts', isCurrent);
+const visiblePosts = await getCollection('posts', isVisible);
+const posts = visiblePosts.filter(isCurrent);
+const entryIds = buildEntryIndex(visiblePosts);
 const series = (await getCollection('series')).map(seriesMetadata);
 const timeline = buildTimeline(posts, series);
 ---
@@ -15,6 +18,7 @@ const timeline = buildTimeline(posts, series);
 <BaseLayout>
   <div class="wrap">
     <section class="hero">
+      <SystemLabel code="NODE//WRITING_INDEX" detail="MODE/READ_ONLY" />
       <h1>{SITE_TITLE}</h1>
       <p class="tagline">{SITE_TAGLINE}</p>
     </section>
@@ -26,8 +30,8 @@ const timeline = buildTimeline(posts, series);
         {timeline.map((item) => (
           <li>
             {item.type === 'post'
-              ? <PostCard post={item.post} />
-              : <SeriesCard series={item.series} members={item.members} />}
+              ? <PostCard post={item.post} entryId={entryIds.get(item.post.id)} />
+              : <SeriesCard series={item.series} members={item.members} {entryIds} />}
           </li>
         ))}
       </ul>

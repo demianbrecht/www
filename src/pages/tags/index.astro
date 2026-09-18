@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SystemLabel from '../../components/SystemLabel.astro';
 import { isVisible, tagUrl } from '../../utils';
 
 const posts = await getCollection('posts', isVisible);
@@ -20,6 +21,7 @@ const tags = [...counts.entries()].sort(
 
 <BaseLayout title="Tags" description="Browse posts by tag.">
   <div class="wrap">
+    <SystemLabel code="INDEX//TOPICS" detail={`${tags.length} KEYS`} />
     <h1>Tags</h1>
     <p class="label">{tags.length} {tags.length === 1 ? 'tag' : 'tags'}</p>
 

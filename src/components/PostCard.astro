@@ -5,15 +5,17 @@ import OriginalPublication from './OriginalPublication.astro';
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  entryId?: string;
 }
 
-const { post } = Astro.props;
+const { post, entryId } = Astro.props;
 const { title, description, pubDate, tags, draft } = post.data;
 const baseUrl = import.meta.env.BASE_URL;
 ---
 
 <article class="post-card">
   <div class="post-meta">
+    {entryId && (<><span class="record-id">{entryId}</span><span class="sep">/</span></>)}
     <time datetime={isoDate(pubDate)}>{formatDate(pubDate)}</time>
     <span class="sep">/</span>
     <span>{readingTime(post.body)}</span>

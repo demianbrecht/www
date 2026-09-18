@@ -123,7 +123,8 @@ theme, set in `astro.config.mjs`.
 
 Subtle CRT scanlines, edge falloff, drifting glow, and occasional signal tears
 provide atmosphere without moving the content. All ambient animation respects
-`prefers-reduced-motion`.
+`prefers-reduced-motion`. Small system labels and chronological `ENTRY_###`
+identifiers add interface texture without changing the editorial hierarchy.
 
 Type is the system stack — `-apple-system`/`Segoe UI` for prose and `SF Mono`/
 `Menlo` for code and UI labels. No webfonts are downloaded.

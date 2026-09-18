@@ -1,0 +1,14 @@
+---
+import { SITE_TITLE } from '../consts';
+
+const burnoutIndex = SITE_TITLE.lastIndexOf('e');
+const before = SITE_TITLE.slice(0, burnoutIndex);
+const burnoutLetter = SITE_TITLE[burnoutIndex];
+const after = SITE_TITLE.slice(burnoutIndex + 1);
+---
+
+<span class="site-title" aria-label={SITE_TITLE}>
+  <span aria-hidden="true">
+    {before}<span class="burnout-letter">{burnoutLetter}</span>{after}
+  </span>
+</span>

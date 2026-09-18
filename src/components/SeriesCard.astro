@@ -7,9 +7,10 @@ import OriginalPublication from './OriginalPublication.astro';
 interface Props {
   series: SeriesMetadata;
   members: SeriesMember<CollectionEntry<'posts'>>[];
+  entryIds: ReadonlyMap<string, string>;
 }
 
-const { series, members } = Astro.props;
+const { series, members, entryIds } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
 ---
 
@@ -23,7 +24,10 @@ const baseUrl = import.meta.env.BASE_URL;
   <ol class="series-members">
     {members.map(({ post, part }) => (
       <li>
-        <span class="part">Part {part}</span>
+        <span class="part">
+          <span class="record-id">{entryIds.get(post.id)}</span>
+          <span>part {String(part).padStart(2, '0')}</span>
+        </span>
         <div>
           <a class="signal-link" href={postUrl(post.id, baseUrl)}>{post.data.title}</a>
           <OriginalPublication publication={post.data.originallyPublished} />
@@ -76,10 +80,15 @@ const baseUrl = import.meta.env.BASE_URL;
   }
 
   .part {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
     color: var(--text-fainter);
     font-family: var(--font-mono);
     font-size: 0.78rem;
   }
+
+  .part .record-id { color: var(--accent); }
 
   .series-members a { font-weight: 600; }
 

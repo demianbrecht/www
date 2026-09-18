@@ -5,6 +5,7 @@ import BaseLayout from './BaseLayout.astro';
 import OriginalPublication from '../components/OriginalPublication.astro';
 import Giscus from '../components/Giscus.astro';
 import ShareBar from '../components/ShareBar.astro';
+import SystemLabel from '../components/SystemLabel.astro';
 import { postUrl, tagUrl, formatDate, isoDate, readingTime } from '../utils';
 
 interface SeriesPresentation {
@@ -16,6 +17,7 @@ interface SeriesPresentation {
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  entryId: string;
   prev?: CollectionEntry<'posts'>;
   next?: CollectionEntry<'posts'>;
   series?: SeriesPresentation;
@@ -23,7 +25,7 @@ interface Props {
   nextLabel?: string;
 }
 
-const { post, prev, next, series, prevLabel = 'older', nextLabel = 'newer' } = Astro.props;
+const { post, entryId, prev, next, series, prevLabel = 'older', nextLabel = 'newer' } = Astro.props;
 const {
   title,
   description,
@@ -49,6 +51,8 @@ const shareUrl = new URL(Astro.url.pathname, Astro.site).href;
             [!] draft — not included in production builds
           </div>
         )}
+
+        <SystemLabel code="TRANSMISSION//OPEN" detail={entryId} />
 
         <h1>{title}</h1>
         <p class="description">{description}</p>
