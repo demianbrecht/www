@@ -5,7 +5,7 @@ import PostCard from '../components/PostCard.astro';
 import SeriesCard from '../components/SeriesCard.astro';
 import SystemLabel from '../components/SystemLabel.astro';
 import { SITE_TITLE, SITE_TAGLINE } from '../consts';
-import { buildEntryIndex, isCurrent, isVisible } from '../utils';
+import { buildEntryIndex, isCurrent, isVisible, slugify } from '../utils';
 import { buildTimeline, seriesMetadata } from '../timeline';
 
 const visiblePosts = await getCollection('posts', isVisible);
@@ -28,7 +28,7 @@ const timeline = buildTimeline(posts, series);
     ) : (
       <ul class="post-list">
         {timeline.map((item) => (
-          <li>
+          <li id={slugify(item.type === 'post' ? item.post.data.title : item.series.title)}>
             {item.type === 'post'
               ? <PostCard post={item.post} entryId={entryIds.get(item.post.id)} />
               : <SeriesCard series={item.series} members={item.members} {entryIds} />}

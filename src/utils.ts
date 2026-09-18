@@ -16,13 +16,18 @@ export function tagUrl(tag: string, baseUrl: string = import.meta.env.BASE_URL):
   return url(`tags/${slugifyTag(tag)}`, baseUrl);
 }
 
-/** Tags are display strings; slugs are what appear in URLs. */
-export function slugifyTag(tag: string): string {
-  return tag
+/** Lowercase, hyphenated slug from an arbitrary display string. */
+export function slugify(value: string): string {
+  return value
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/** Tags are display strings; slugs are what appear in URLs. */
+export function slugifyTag(tag: string): string {
+  return slugify(tag);
 }
 
 export function formatDate(date: Date): string {
