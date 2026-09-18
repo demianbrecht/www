@@ -782,10 +782,43 @@ main {
 }
 
 .newsletter-embed .formkit-alert {
-  margin: 0 0 0.65rem !important;
-  color: var(--text-dim) !important;
-  font: 0.7rem/1.4 var(--font-mono) !important;
+  width: 100% !important;
+  margin: 0 0 0.75rem !important;
+  padding: 0.75rem 0.9rem !important;
+  border: 1px solid var(--border-lit) !important;
+  border-left-width: 2px !important;
+  border-radius: var(--radius) !important;
+  background: var(--bg-inset) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+  list-style: none !important;
+  text-align: left !important;
+  font: 0.8rem/1.5 var(--font-mono) !important;
+  letter-spacing: 0.015em;
 }
+
+.newsletter-embed .formkit-alert-success {
+  border-color: rgba(98, 255, 198, 0.34) !important;
+  border-left-color: var(--accent) !important;
+  background:
+    linear-gradient(90deg, rgba(98, 255, 198, 0.1), rgba(98, 255, 198, 0.025)),
+    var(--bg-inset) !important;
+  color: var(--accent-hover) !important;
+  text-shadow: 0 0 0.5rem rgba(98, 255, 198, 0.12);
+}
+
+.newsletter-embed .formkit-alert-error {
+  border-color: rgba(229, 104, 109, 0.34) !important;
+  border-left-color: var(--status-danger) !important;
+  background:
+    linear-gradient(90deg, rgba(229, 104, 109, 0.1), rgba(229, 104, 109, 0.025)),
+    var(--bg-inset) !important;
+  color: #ffb4b8 !important;
+}
+
+.newsletter-embed .formkit-alert > :first-child { margin-top: 0 !important; }
+.newsletter-embed .formkit-alert > :last-child { margin-bottom: 0 !important; }
+.newsletter-embed .formkit-alert:empty { display: none !important; }
 
 .newsletter-embed .formkit-powered-by-convertkit-container {
   position: static !important;

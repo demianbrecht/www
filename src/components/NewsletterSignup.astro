@@ -13,6 +13,7 @@ const localPreview = import.meta.env.DEV && uid === 'local-preview' && embedUrl 
         {localPreview ? (
           <form class="formkit-form" aria-label="Newsletter signup preview" data-local-preview>
             <div data-style="clean">
+              <ul class="formkit-alert" role="status" aria-live="polite"></ul>
               <div class="formkit-fields">
                 <div class="formkit-field">
                   <input
@@ -25,7 +26,7 @@ const localPreview = import.meta.env.DEV && uid === 'local-preview' && embedUrl 
                     required
                   />
                 </div>
-                <button class="formkit-submit" type="button">Subscribe</button>
+                <button class="formkit-submit" type="submit">Subscribe</button>
               </div>
               <div class="formkit-powered-by-convertkit-container">
                 <a
@@ -74,6 +75,17 @@ const localPreview = import.meta.env.DEV && uid === 'local-preview' && embedUrl 
       embed?.addEventListener('error', () => {
         syncVisibility();
       });
+
+      const localPreviewForm = panel.querySelector<HTMLFormElement>('form[data-local-preview]');
+      localPreviewForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const alert = localPreviewForm.querySelector<HTMLElement>('.formkit-alert');
+        if (!alert) return;
+        alert.classList.remove('formkit-alert-error');
+        alert.classList.add('formkit-alert-success');
+        alert.textContent = 'Success! Now check your email to confirm your subscription.';
+      });
+
       syncVisibility();
     }
   </script>
