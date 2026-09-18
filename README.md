@@ -133,7 +133,11 @@ Type is the system stack — `-apple-system`/`Segoe UI` for prose and `SF Mono`/
 
 Deployment is automatic. Pushing to `main` triggers the GitHub Actions workflow
 in `.github/workflows/deploy.yml`, which builds the site and publishes it to
-GitHub Pages. There is no manual publish step.
+GitHub Pages. There is no manual publish step. After a successful push deploy,
+the workflow also schedules a Kit broadcast when a post is newly public: either
+a new post without `draft: true`, or an existing draft changed to public. Edits
+and renames of already-public posts do not send another broadcast, and manual
+workflow runs never send one.
 
 Pages is configured once under **Settings → Pages → Source → GitHub Actions**.
 The custom domain (`demianbrecht.com`) is pinned by `public/CNAME`, which is
@@ -148,3 +152,26 @@ build time rather than editing the file:
 ```console
 $ SITE_URL=https://example.com BASE_PATH=/ make build
 ```
+
+### Kit newsletter configuration
+
+Create the following repository-level configuration under **Settings → Secrets
+and variables → Actions**:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| Variable | `KIT_FORM_UID` | the form's `data-uid` value from Kit's JavaScript embed snippet |
+| Variable | `KIT_FORM_EMBED_URL` | the full `src` URL from that embed snippet |
+| Secret | `KIT_API_KEY` | a personal Kit API v4 key used to read and create broadcasts |
+
+The signup panel is omitted from the built site unless both variables are set.
+In Kit, use the form's native option to hide it from visitors who have already
+subscribed; the site's wrapper follows Kit's injected form visibility so it
+does not leave an empty panel behind.
+
+Broadcasts target all subscribers, are scheduled one minute after creation,
+and have `public: false`, so they are not added to Kit's public web feed. Each
+broadcast description contains a stable publication marker. Before creating a
+broadcast, the workflow scans all existing broadcasts for that marker, making
+workflow retries safe. `KIT_API_KEY` is only exposed to the post-deployment
+notification step, never to Astro's browser-facing build.

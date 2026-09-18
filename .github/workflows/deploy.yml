@@ -29,6 +29,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Build with Astro
         uses: withastro/action@v3
+        env:
+          PUBLIC_KIT_FORM_UID: ${{ vars.KIT_FORM_UID }}
+          PUBLIC_KIT_FORM_EMBED_URL: ${{ vars.KIT_FORM_EMBED_URL }}
         with:
           node-version: 24
 
@@ -42,3 +45,20 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify-subscribers:
+    needs: deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout publication history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Send newly public posts through Kit
+        run: node scripts/publish-kit-broadcasts.mjs
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          KIT_API_KEY: ${{ secrets.KIT_API_KEY }}
+          SITE_URL: https://demianbrecht.com

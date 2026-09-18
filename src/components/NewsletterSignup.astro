@@ -1,0 +1,70 @@
+---
+const uid = import.meta.env.PUBLIC_KIT_FORM_UID?.trim();
+const embedUrl = import.meta.env.PUBLIC_KIT_FORM_EMBED_URL?.trim();
+const configured = Boolean(uid && embedUrl);
+const localPreview = import.meta.env.DEV && uid === 'local-preview' && embedUrl === 'local-preview';
+---
+
+{configured && (
+  <aside class="newsletter-signup" aria-label="Email subscription" data-newsletter-signup hidden>
+    <div class="newsletter-signup-inner">
+      <span class="newsletter-kicker" aria-hidden="true">PUBLIC//UPLINK</span>
+      <div class="newsletter-embed">
+        {localPreview ? (
+          <form class="formkit-form" aria-label="Newsletter signup preview">
+            <div class="formkit-fields">
+              <div class="formkit-field">
+                <input
+                  class="formkit-input"
+                  type="email"
+                  name="email_address"
+                  placeholder="Email address"
+                  autocomplete="email"
+                  aria-label="Email address"
+                  required
+                />
+              </div>
+              <button class="formkit-submit" type="button">Subscribe</button>
+            </div>
+          </form>
+        ) : (
+          <script is:inline async data-uid={uid} src={embedUrl}></script>
+        )}
+      </div>
+    </div>
+  </aside>
+)}
+
+{configured && (
+  <script>
+    for (const panel of document.querySelectorAll<HTMLElement>('[data-newsletter-signup]')) {
+      const embed = panel.querySelector<HTMLScriptElement>('script[data-uid]');
+
+      const syncVisibility = () => {
+        const form = panel.querySelector<HTMLElement>('.formkit-form');
+        const styles = form ? getComputedStyle(form) : undefined;
+        const shouldHide = !form
+          || form.hidden
+          || styles?.display === 'none'
+          || styles?.visibility === 'hidden';
+        if (panel.hidden !== shouldHide) panel.hidden = shouldHide;
+      };
+
+      const observer = new MutationObserver(syncVisibility);
+      observer.observe(panel, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+        attributeFilter: ['class', 'hidden', 'style'],
+      });
+
+      embed?.addEventListener('load', () => {
+        requestAnimationFrame(syncVisibility);
+      });
+      embed?.addEventListener('error', () => {
+        syncVisibility();
+      });
+      syncVisibility();
+    }
+  </script>
+)}

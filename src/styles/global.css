@@ -673,6 +673,127 @@ main {
 .site-footer a { color: var(--text-dim); }
 .site-footer a:hover { color: var(--text); text-decoration: none; }
 
+/* --- Newsletter uplink -------------------------------------------------- */
+
+.newsletter-signup {
+  border-top: 1px solid rgba(98, 255, 198, 0.16);
+  background:
+    linear-gradient(90deg, transparent, rgba(98, 255, 198, 0.055), transparent),
+    rgba(14, 16, 20, 0.92);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-ligatures: none;
+  letter-spacing: 0.045em;
+}
+
+.newsletter-signup[hidden] { display: none; }
+
+.newsletter-signup-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0.45rem 1.5rem;
+  color: var(--text-dim);
+}
+
+.newsletter-kicker {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 0.55rem rgba(98, 255, 198, 0.3);
+}
+
+.newsletter-embed {
+  flex: 1 1 22rem;
+  max-width: 26rem;
+  margin-left: auto;
+}
+
+.newsletter-embed .formkit-form {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.newsletter-embed .formkit-fields {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 0.45rem !important;
+}
+
+.newsletter-embed .formkit-field {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.newsletter-embed .formkit-input {
+  width: 100% !important;
+  min-height: 2rem !important;
+  padding: 0.35rem 0.6rem !important;
+  border: 1px solid var(--border-lit) !important;
+  border-radius: var(--radius) !important;
+  outline: none !important;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  font: 0.72rem/1.3 var(--font-mono) !important;
+}
+
+.newsletter-embed .formkit-input::placeholder {
+  color: var(--text-fainter) !important;
+  opacity: 1 !important;
+}
+
+.newsletter-embed .formkit-input:focus-visible {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(98, 255, 198, 0.15) !important;
+}
+
+.newsletter-embed .formkit-submit {
+  flex: 0 0 auto !important;
+  min-height: 2rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: var(--radius) !important;
+  background: var(--accent-muted) !important;
+  color: var(--accent-hover) !important;
+  font: 600 0.68rem/1 var(--font-mono) !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+}
+
+.newsletter-embed .formkit-submit:is(:hover, :focus-visible) {
+  background: rgba(98, 255, 198, 0.2) !important;
+  box-shadow: 0 0 0.7rem rgba(98, 255, 198, 0.14) !important;
+}
+
+.newsletter-embed .formkit-alert {
+  margin: 0 0 0.35rem !important;
+  color: var(--text-dim) !important;
+  font: 0.7rem/1.4 var(--font-mono) !important;
+}
+
+@media (max-width: 42rem) {
+  .newsletter-signup-inner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.65rem;
+  }
+
+  .newsletter-embed {
+    flex-basis: 100%;
+    max-width: none;
+    margin: 0.25rem 0 0;
+  }
+}
+
 /* --- Hero (home) --------------------------------------------------------- */
 
 .hero {

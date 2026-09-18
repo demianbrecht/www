@@ -41,7 +41,9 @@ install: $(NODE_MODULES)
 
 ## run: start the dev server with live reload
 run: install
-	@$(NPM) run dev -- --port $(PORT)
+	@PUBLIC_KIT_FORM_UID=local-preview \
+		PUBLIC_KIT_FORM_EMBED_URL=local-preview \
+		$(NPM) run dev -- --port $(PORT)
 
 ## dev: alias for run
 dev: run
