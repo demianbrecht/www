@@ -1,6 +1,7 @@
 ---
 import { SITE_TITLE, NAV_LINKS } from '../consts';
 import { url } from '../utils';
+import SiteTitle from './SiteTitle.astro';
 
 /** Current path with base and trailing slash stripped, for nav highlighting. */
 const current =
@@ -10,7 +11,9 @@ const baseUrl = import.meta.env.BASE_URL;
 
 <header class="site-header">
   <div class="wrap">
-    <a class="brand signal-link" href={url('/', baseUrl)}>{SITE_TITLE}</a>
+    <a class="brand signal-link" href={url('/', baseUrl)} aria-label={SITE_TITLE}>
+      <SiteTitle />
+    </a>
     <nav class="site-nav" aria-label="Main">
       {NAV_LINKS.map(({ href, label }) => {
         const target = href.replace(/\/$/, '') || '/';

@@ -242,6 +242,44 @@ body::after {
   47%, 100% { opacity: 0.12; }
 }
 
+@keyframes phosphor-burnout {
+  0%, 72%, 100% {
+    color: inherit;
+    opacity: 1;
+    text-shadow: inherit;
+  }
+  72.2% {
+    color: var(--text-fainter);
+    opacity: 0.08;
+    text-shadow: none;
+  }
+  72.8% {
+    color: var(--accent-hover);
+    opacity: 0.82;
+    text-shadow: 0 0 0.45rem rgba(98, 255, 198, 0.72);
+  }
+  73.15%, 75.2% {
+    color: var(--text-fainter);
+    opacity: 0.06;
+    text-shadow: none;
+  }
+  75.45% {
+    color: var(--accent-hover);
+    opacity: 0.95;
+    text-shadow: 0 0 0.65rem rgba(98, 255, 198, 0.82);
+  }
+  75.8% {
+    color: var(--text-dim);
+    opacity: 0.28;
+    text-shadow: none;
+  }
+  76.15% {
+    color: inherit;
+    opacity: 1;
+    text-shadow: inherit;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body,
   body::before,
@@ -305,6 +343,14 @@ a:focus-visible {
   border-radius: 2px;
 }
 
+.burnout-letter {
+  display: inline-block;
+  min-width: 0.62em;
+  margin-inline: -0.03em;
+  text-align: center;
+  animation: phosphor-burnout 18s steps(1, end) infinite;
+}
+
 /* Interactive labels briefly lose sync, then settle beside a live cursor. */
 .signal-link {
   display: inline-block;
@@ -340,6 +386,10 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .burnout-letter {
+    animation: none;
+  }
+
   .signal-link:is(:hover, :focus-visible) {
     animation: none;
   }
