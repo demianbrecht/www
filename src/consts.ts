@@ -13,6 +13,24 @@ export const NAV_LINKS = [
   { href: '/about', label: 'About' },
 ];
 
+export const SOCIAL_LINKS = [
+  {
+    label: 'LinkedIn',
+    handle: 'demianbrecht',
+    href: 'https://www.linkedin.com/in/demianbrecht/',
+  },
+  {
+    label: 'GitHub',
+    handle: 'demianbrecht',
+    href: 'https://github.com/demianbrecht',
+  },
+  {
+    label: 'X',
+    handle: '@demianbrecht',
+    href: 'https://x.com/demianbrecht',
+  },
+] as const;
+
 /** Posts collected by the permanent Agentic Engineering reading guide. */
 export const AGENTIC_ENGINEERING_POST_IDS: ReadonlySet<string> = new Set([
   'stop-asking-llms-to-be-deterministic',

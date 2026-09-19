@@ -7,6 +7,7 @@ description: About this site and its author.
 {/* Aliased: MDX pages already export a page-level `url`. */}
 import { Image } from 'astro:assets';
 import { url as href } from '../utils';
+import { SOCIAL_LINKS } from '../consts';
 import SystemLabel from '../components/SystemLabel.astro';
 import retroPortrait from '../assets/me-retro.png';
 
@@ -46,7 +47,11 @@ Outside of work, I’m a dad and generally happiest somewhere away from a screen
 
 ## Elsewhere
 
-- GitHub: [demianbrecht](https://github.com/demianbrecht)
-- Feed: <a href={href('rss.xml')}>rss.xml</a>
+<ul>
+  {SOCIAL_LINKS.map(({ label, handle, href: profileHref }) => (
+    <li>{label}: <a href={profileHref} rel="me">{handle}</a></li>
+  ))}
+  <li>Feed: <a href={href('rss.xml')}>rss.xml</a></li>
+</ul>
 
 </div>

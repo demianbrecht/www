@@ -1,5 +1,5 @@
 ---
-import { SITE_TITLE, NAV_LINKS } from '../consts';
+import { SITE_TITLE, NAV_LINKS, SOCIAL_LINKS } from '../consts';
 import { url } from '../utils';
 import SiteTitle from './SiteTitle.astro';
 
@@ -36,6 +36,25 @@ const baseUrl = import.meta.env.BASE_URL;
           </a>
         );
       })}
+      <details class="social-menu">
+        <summary class="signal-link">
+          Social <span class="social-menu-indicator" aria-hidden="true">▾</span>
+        </summary>
+        <ul class="social-menu-panel">
+          {SOCIAL_LINKS.map(({ href, label }) => (
+            <li>
+              <a
+                class="signal-link"
+                href={href}
+                rel="me"
+                aria-label={`${label} profile`}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
     </nav>
   </div>
 </header>
