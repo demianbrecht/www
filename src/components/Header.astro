@@ -2,6 +2,7 @@
 import { SITE_TITLE, NAV_LINKS, SOCIAL_LINKS } from '../consts';
 import { url } from '../utils';
 import SiteTitle from './SiteTitle.astro';
+import SocialIcon from './SocialIcon.astro';
 
 /** Current path with base and trailing slash stripped, for nav highlighting. */
 const current =
@@ -10,7 +11,7 @@ const baseUrl = import.meta.env.BASE_URL;
 ---
 
 <header class="site-header">
-  <div class="wrap">
+  <div class="wrap site-header-primary">
     <a class="brand signal-link" href={url('/', baseUrl)} aria-label={SITE_TITLE}>
       <SiteTitle />
     </a>
@@ -36,25 +37,16 @@ const baseUrl = import.meta.env.BASE_URL;
           </a>
         );
       })}
-      <details class="social-menu">
-        <summary class="signal-link">
-          Social <span class="social-menu-indicator" aria-hidden="true">▾</span>
-        </summary>
-        <ul class="social-menu-panel">
-          {SOCIAL_LINKS.map(({ href, label }) => (
-            <li>
-              <a
-                class="signal-link"
-                href={href}
-                rel="me"
-                aria-label={`${label} profile`}
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </details>
+    </nav>
+  </div>
+  <div class="social-bar">
+    <nav class="wrap social-nav" aria-label="Social profiles">
+      {SOCIAL_LINKS.map(({ href, label }) => (
+        <a class="signal-link" href={href} rel="me">
+          <SocialIcon name={label} />
+          <span>{label}</span>
+        </a>
+      ))}
     </nav>
   </div>
 </header>
