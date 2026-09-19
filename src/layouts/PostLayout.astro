@@ -6,7 +6,8 @@ import OriginalPublication from '../components/OriginalPublication.astro';
 import Giscus from '../components/Giscus.astro';
 import ShareBar from '../components/ShareBar.astro';
 import SystemLabel from '../components/SystemLabel.astro';
-import { postUrl, tagUrl, formatDate, isoDate, readingTime } from '../utils';
+import { AGENTIC_ENGINEERING_POST_IDS } from '../consts';
+import { postUrl, tagUrl, formatDate, isoDate, readingTime, url } from '../utils';
 
 interface SeriesPresentation {
   id: string;
@@ -98,6 +99,15 @@ const shareUrl = new URL(Astro.url.pathname, Astro.site).href;
       <div class="prose">
         <slot />
       </div>
+
+      {AGENTIC_ENGINEERING_POST_IDS.has(post.id) && (
+        <aside class="agentic-series-link">
+          <span>FIELD_GUIDE</span>
+          <a class="signal-link" href={url('/agentic-engineering', import.meta.env.BASE_URL)}>
+            Part of Agentic Engineering in <span class="signal-tail">Practice <span aria-hidden="true">→</span></span>
+          </a>
+        </aside>
+      )}
 
       <footer class="post-footer">
         <OriginalPublication publication={originallyPublished} />

@@ -1,0 +1,160 @@
+---
+layout: ../layouts/BaseLayout.astro
+title: Agentic Engineering in Practice
+description: A practical guide to agentic engineering, coding-agent architecture, MCP boundaries, and runtime QA, drawn from building systems where software and agents share the work.
+---
+
+{/* Aliased: MDX pages already export a page-level `url`. */}
+import { url as href } from '../utils';
+import SystemLabel from '../components/SystemLabel.astro';
+
+<div class="wrap">
+<article class="agentic-hub">
+
+<SystemLabel code="FIELD_GUIDE//AGENTIC_ENGINEERING" detail="START_HERE" />
+
+<header class="agentic-hub-header">
+
+# Agentic Engineering in Practice
+
+<p class="agentic-hub-dek">
+I’ve spent the last year trying to work out where software should end and agents
+should begin. These are the ideas that survived contact with reality.
+</p>
+
+<div class="agentic-hub-thesis">
+
+After throwing a fair amount of shit at the wall, this is the split that has
+actually held up: **models should own judgment and adaptation; software should
+own guarantees and repeatability; people should own the decisions that carry
+consequences.** It isn’t a universal architecture. It is a practical way to
+decide who should own the control loop for the problem in front of me.
+
+When I say *agentic engineering*, I don’t mean handing an entire system to a
+model. I mean designing the seams deliberately: matching the harness to the
+work, using MCP as a boundary between conversation and durable execution, and
+keeping people in the decisions that carry consequences. This page is the map.
+
+</div>
+
+</header>
+
+<nav class="agentic-hub-nav" aria-label="On this page">
+  <span>JUMP_TO</span>
+  <a href="#principles">Principles</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#in-practice">In practice</a>
+  <a href="#implementations">Implementations</a>
+</nav>
+
+<section class="agentic-read-first" aria-labelledby="read-first-heading">
+  <div class="agentic-section-label">00 // READ_FIRST</div>
+  <div>
+    <h2 id="read-first-heading">
+      <a class="signal-link" href={href('/posts/dude-how-does-this-help-me')}>
+        Dude, how does this help <span class="signal-tail">me?</span>
+      </a>
+    </h2>
+    <p>
+      The shortest route from the theory to my daily work: the recurring patterns,
+      where they fit, and how they become tools I actually use.
+    </p>
+    <a class="agentic-text-link signal-link" href={href('/posts/dude-how-does-this-help-me')}>
+      Start with the <span class="signal-tail">synthesis <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+</section>
+
+## The reading path
+
+<p class="agentic-section-intro">
+The posts build on one another, but you don’t have to read them in publication
+order. Follow the path below, or jump to the question closest to the system
+you’re building.
+</p>
+
+<section class="agentic-path-section" aria-labelledby="principles">
+  <div class="agentic-section-heading">
+    <span>01</span>
+    <div>
+      <h2 id="principles">The principles</h2>
+      <p>Decide what should be probabilistic before deciding how to build it.</p>
+    </div>
+  </div>
+  <div class="agentic-card-grid">
+    <a class="agentic-card" href={href('/posts/stop-asking-llms-to-be-deterministic')}>
+      <span class="agentic-card-code">PRINCIPLE_01</span>
+      <h3>Stop Asking LLMs to Be Deterministic</h3>
+      <p>Why model judgment belongs inside bounded nodes, with ordinary code enforcing the workflow properties that need to hold every time.</p>
+      <span class="agentic-card-action">Read the principle <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="agentic-card" href={href('/posts/the-division-of-the-local-harnesses')}>
+      <span class="agentic-card-code">PRINCIPLE_02</span>
+      <h3>The Division of the Local Harnesses</h3>
+      <p>A framework for deciding whether software or a conversational agent should own the control loop, based on the nature of the work.</p>
+      <span class="agentic-card-action">Choose the control loop <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+</section>
+
+<section class="agentic-path-section" aria-labelledby="architecture">
+  <div class="agentic-section-heading">
+    <span>02</span>
+    <div>
+      <h2 id="architecture">The architecture</h2>
+      <p>Give adaptive conversation and repeatable execution a clear seam.</p>
+    </div>
+  </div>
+  <div class="agentic-card-grid">
+    <a class="agentic-card" href={href('/posts/the-harness-within-the-harness')}>
+      <span class="agentic-card-code">ARCHITECTURE_01</span>
+      <h3>The Harness Within the Harness</h3>
+      <p>Using MCP as a portable application boundary: a swappable coding harness outside, a bounded and durable agent application within.</p>
+      <span class="agentic-card-action">Find the seam <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="agentic-card" href={href('/posts/context-as-a-control-surface')}>
+      <span class="agentic-card-code">ARCHITECTURE_02</span>
+      <h3>Context as a Control Surface</h3>
+      <p>How the outer harness can steer successive executions without taking the guarantees or the execution loop away from the inner system.</p>
+      <span class="agentic-card-action">Open the control surface <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+</section>
+
+<section class="agentic-path-section" aria-labelledby="in-practice">
+  <div class="agentic-section-heading">
+    <span>03</span>
+    <div>
+      <h2 id="in-practice">Putting it into practice</h2>
+      <p>Apply the boundary to work that needs both judgment and operational discipline.</p>
+    </div>
+  </div>
+  <div class="agentic-card-grid agentic-card-grid-single">
+    <a class="agentic-card" href={href('/posts/runtime-qa-give-the-agent-the-loop-not-the-last-word')}>
+      <span class="agentic-card-code">PRACTICE_01</span>
+      <h3>Runtime QA: Give the Agent the Loop, Not the Last Word</h3>
+      <p>Let the agent own a bounded investigative loop while software makes the mechanics reviewable and a person retains the consequential decisions.</p>
+      <span class="agentic-card-action">Run the investigation <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+</section>
+
+<section class="agentic-project" aria-labelledby="implementations">
+  <div class="agentic-section-label">04 // IMPLEMENTATIONS</div>
+  <h2 id="implementations">Switchplane</h2>
+  <p>
+    Switchplane was an experimental Python runtime control plane for local,
+    long-running agent workflows. It put deterministic flow around model calls
+    and provided supervised execution, durable task state, CLI/TUI operation,
+    and MCP integration. The project yielded a ton of learnings, but I’ve since
+    switched gears. I now put agentic systems behind an MCP boundary, letting
+    the conversational harness drive bounded systems rather than treating a
+    standalone runtime as the primary interface.
+  </p>
+  <a class="agentic-project-link signal-link" href="https://github.com/salesforce-misc/switchplane">
+    Explore the experiment on <span class="signal-tail">GitHub <span aria-hidden="true">↗</span></span>
+  </a>
+</section>
+
+</article>
+</div>

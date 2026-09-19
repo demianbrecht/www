@@ -7,10 +7,21 @@ export const AUTHOR = 'Demian Brecht';
 
 export const NAV_LINKS = [
   { href: '/', label: 'Posts' },
+  { href: '/agentic-engineering', label: 'Start Here', featured: true },
   { href: '/archive', label: 'Archive' },
   { href: '/tags', label: 'Tags' },
   { href: '/about', label: 'About' },
 ];
+
+/** Posts collected by the permanent Agentic Engineering reading guide. */
+export const AGENTIC_ENGINEERING_POST_IDS: ReadonlySet<string> = new Set([
+  'stop-asking-llms-to-be-deterministic',
+  'the-division-of-the-local-harnesses',
+  'the-harness-within-the-harness',
+  'context-as-a-control-surface',
+  'dude-how-does-this-help-me',
+  'runtime-qa-give-the-agent-the-loop-not-the-last-word',
+]);
 
 /**
  * Giscus (GitHub Discussions-backed comments) config. Rendered on every post

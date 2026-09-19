@@ -15,14 +15,24 @@ const baseUrl = import.meta.env.BASE_URL;
       <SiteTitle />
     </a>
     <nav class="site-nav" aria-label="Main">
-      {NAV_LINKS.map(({ href, label }) => {
+      {NAV_LINKS.map(({ href, label, featured }) => {
         const target = href.replace(/\/$/, '') || '/';
         const isCurrent = target === '/'
           ? current === '/'
           : current === target || current.startsWith(`${target}/`);
+        const burnoutIndex = featured ? label.indexOf('e') : -1;
         return (
-          <a class="signal-link" href={url(href, baseUrl)} aria-current={isCurrent ? 'page' : undefined}>
-            {label}
+          <a
+            class:list={['signal-link', { 'start-here-link': featured }]}
+            href={url(href, baseUrl)}
+            aria-current={isCurrent ? 'page' : undefined}
+            aria-label={featured ? label : undefined}
+          >
+            {featured ? (
+              <span aria-hidden="true">
+                {label.slice(0, burnoutIndex)}<span class="burnout-letter start-here-burnout">{label[burnoutIndex]}</span>{label.slice(burnoutIndex + 1)}
+              </span>
+            ) : label}
           </a>
         );
       })}

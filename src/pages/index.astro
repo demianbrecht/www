@@ -5,7 +5,7 @@ import PostCard from '../components/PostCard.astro';
 import SeriesCard from '../components/SeriesCard.astro';
 import SystemLabel from '../components/SystemLabel.astro';
 import { SITE_TITLE, SITE_TAGLINE } from '../consts';
-import { buildEntryIndex, isCurrent, isVisible, slugify } from '../utils';
+import { buildEntryIndex, isCurrent, isVisible, slugify, url } from '../utils';
 import { buildTimeline, seriesMetadata } from '../timeline';
 
 const visiblePosts = await getCollection('posts', isVisible);
@@ -22,6 +22,24 @@ const timeline = buildTimeline(posts, series);
       <h1>{SITE_TITLE}</h1>
       <p class="tagline">{SITE_TAGLINE}</p>
     </section>
+
+    <aside class="home-hub-callout" aria-labelledby="agentic-hub-title">
+      <p class="home-hub-kicker">START_HERE // AGENTIC_ENGINEERING</p>
+      <div class="home-hub-copy">
+        <h2 id="agentic-hub-title">
+          <a class="signal-link" href={url('/agentic-engineering', import.meta.env.BASE_URL)}>
+            Agentic Engineering in <span class="signal-tail">Practice</span>
+          </a>
+        </h2>
+        <p>
+          A guided path through what I’ve learned about control loops, coding-agent
+          architecture, MCP, and runtime QA, plus where the ideas meet working software.
+        </p>
+      </div>
+      <a class="home-hub-enter signal-link" href={url('/agentic-engineering', import.meta.env.BASE_URL)}>
+        enter <span class="signal-tail">hub <span aria-hidden="true">→</span></span>
+      </a>
+    </aside>
 
     {timeline.length === 0 ? (
       <p class="empty-state">No posts yet.</p>
