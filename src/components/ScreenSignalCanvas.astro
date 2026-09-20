@@ -1,0 +1,373 @@
+<canvas class="screen-signal" data-screen-signal aria-hidden="true"></canvas>
+
+<script>
+  const BURST_DURATION = 520;
+  const FIRST_BURST_MIN = 3_000;
+  const FIRST_BURST_MAX = 5_000;
+  const CADENCE_MIN = 15_000;
+  const CADENCE_MAX = 22_000;
+
+  const vertexSource = `
+    attribute vec2 a_position;
+    varying vec2 v_uv;
+
+    void main() {
+      v_uv = a_position * 0.5 + 0.5;
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  const fragmentSource = `
+    precision mediump float;
+
+    varying vec2 v_uv;
+    uniform vec2 u_resolution;
+    uniform vec2 u_contentBounds;
+    uniform float u_time;
+    uniform float u_seed;
+
+    float hash11(float value) {
+      return fract(sin(value * 127.1 + u_seed * 311.7) * 43758.5453);
+    }
+
+    float bandMask(float y, float centre, float halfWidth) {
+      float distanceFromBand = abs(y - centre);
+      return 1.0 - smoothstep(halfWidth * 0.58, halfWidth, distanceFromBand);
+    }
+
+    float burstPulse(float time, float start, float duration) {
+      float attack = smoothstep(start, start + 0.018, time);
+      float release = 1.0 - smoothstep(start + duration * 0.58, start + duration, time);
+      return attack * release;
+    }
+
+    float segmentedNoise(float x, float bandIndex, float frame) {
+      float cells = 9.0 + floor(hash11(bandIndex + 8.0) * 17.0);
+      float cell = floor(x * cells);
+      float segment = step(0.28, hash11(cell + bandIndex * 41.0 + frame * 0.37));
+      float coarse = 0.58 + hash11(cell * 3.7 + bandIndex * 19.0 + frame) * 0.42;
+      float scratches = step(0.83, hash11(floor(x * 91.0) + bandIndex * 13.0 + frame * 0.21));
+      return segment * coarse + scratches * 0.42;
+    }
+
+    void main() {
+      float frame = floor(u_time * 58.0);
+      float globalEnvelope = smoothstep(0.0, 0.035, u_time)
+        * (1.0 - smoothstep(0.43, 0.52, u_time));
+      vec3 colour = vec3(0.0);
+      float coverage = 0.0;
+
+      for (int index = 0; index < 8; index++) {
+        float bandIndex = float(index);
+        float centre = 0.09 + hash11(bandIndex + 1.0) * 0.82;
+        float thicknessPixels = 0.45 + hash11(bandIndex + 17.0) * 1.8;
+        float halfWidth = thicknessPixels / max(u_resolution.y, 1.0);
+        float start = hash11(bandIndex + 29.0) * 0.17;
+        float duration = 0.15 + hash11(bandIndex + 43.0) * 0.2;
+        float jitter = (hash11(frame + bandIndex * 23.0) - 0.5) * 0.09;
+        float x = fract(v_uv.x + jitter);
+        float segments = segmentedNoise(x, bandIndex, frame);
+        float pulse = burstPulse(u_time, start, duration);
+        float greenBand = bandMask(v_uv.y, centre, halfWidth) * segments * pulse;
+
+        float splitPixels = 1.2 + hash11(bandIndex + 71.0) * 2.7;
+        float split = splitPixels / max(u_resolution.y, 1.0);
+        float cyanEdge = bandMask(v_uv.y, centre + split, halfWidth * 0.42)
+          * segments * pulse * 0.34;
+        float magentaEdge = bandMask(v_uv.y, centre - split, halfWidth * 0.36)
+          * segments * pulse * 0.26;
+
+        colour += vec3(0.12, 1.0, 0.64) * greenBand * 0.62;
+        colour += vec3(0.12, 0.8, 1.0) * cyanEdge;
+        colour += vec3(1.0, 0.12, 0.58) * magentaEdge;
+        coverage += greenBand * 0.52 + cyanEdge * 0.3 + magentaEdge * 0.24;
+
+        float echoStart = start + 0.105;
+        float echoPulse = burstPulse(u_time, echoStart, duration * 0.72);
+        float echoCentre = 1.0 - centre;
+        float echoJitter = (hash11(frame + bandIndex * 31.0 + 101.0) - 0.5) * 0.07;
+        float echoX = fract(1.0 - v_uv.x + echoJitter);
+        float echoSegments = segmentedNoise(echoX, bandIndex + 83.0, frame);
+        float echoBand = bandMask(v_uv.y, echoCentre, halfWidth * 0.78)
+          * echoSegments * echoPulse;
+        float echoCyan = bandMask(v_uv.y, echoCentre - split, halfWidth * 0.3)
+          * echoSegments * echoPulse * 0.23;
+        float echoMagenta = bandMask(v_uv.y, echoCentre + split, halfWidth * 0.28)
+          * echoSegments * echoPulse * 0.17;
+
+        colour += vec3(0.1, 0.92, 0.58) * echoBand * 0.43;
+        colour += vec3(0.1, 0.72, 1.0) * echoCyan;
+        colour += vec3(0.92, 0.08, 0.48) * echoMagenta;
+        coverage += echoBand * 0.36 + echoCyan * 0.2 + echoMagenta * 0.16;
+      }
+
+      float rollingLine = step(0.985, sin((v_uv.y * u_resolution.y + frame * 5.0) * 0.37))
+        * (0.2 + 0.8 * hash11(floor(v_uv.y * 120.0) + frame));
+      colour += vec3(0.08, 0.54, 0.36) * rollingLine * 0.08;
+      coverage += rollingLine * 0.025;
+
+      float contentFeather = 0.035;
+      float insideContent = smoothstep(
+        u_contentBounds.x - contentFeather,
+        u_contentBounds.x + contentFeather,
+        v_uv.x
+      ) * (1.0 - smoothstep(
+        u_contentBounds.y - contentFeather,
+        u_contentBounds.y + contentFeather,
+        v_uv.x
+      ));
+      float readingAttenuation = mix(1.0, 0.2, insideContent);
+      float alpha = clamp(coverage * globalEnvelope * readingAttenuation, 0.0, 0.48);
+      colour = min(colour * globalEnvelope, vec3(1.0));
+      gl_FragColor = vec4(colour * alpha, alpha);
+    }
+  `;
+
+  interface Renderer {
+    gl: WebGLRenderingContext;
+    program: WebGLProgram;
+    buffer: WebGLBuffer;
+    position: number;
+    resolution: WebGLUniformLocation;
+    contentBounds: WebGLUniformLocation;
+    time: WebGLUniformLocation;
+    seed: WebGLUniformLocation;
+  }
+
+  function randomBetween(minimum: number, maximum: number) {
+    return minimum + Math.random() * (maximum - minimum);
+  }
+
+  function compileShader(
+    gl: WebGLRenderingContext,
+    type: number,
+    source: string,
+  ): WebGLShader | undefined {
+    const shader = gl.createShader(type);
+    if (!shader) return undefined;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      gl.deleteShader(shader);
+      return undefined;
+    }
+    return shader;
+  }
+
+  function createRenderer(canvas: HTMLCanvasElement): Renderer | undefined {
+    const attributes: WebGLContextAttributes = {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      premultipliedAlpha: true,
+      preserveDrawingBuffer: false,
+      powerPreference: 'low-power',
+    };
+    const gl = canvas.getContext('webgl', attributes)
+      ?? canvas.getContext('experimental-webgl', attributes) as WebGLRenderingContext | null;
+    if (!gl) return undefined;
+
+    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+    if (!vertexShader || !fragmentShader) return undefined;
+
+    const program = gl.createProgram();
+    const buffer = gl.createBuffer();
+    if (!program || !buffer) return undefined;
+
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      gl.deleteProgram(program);
+      gl.deleteBuffer(buffer);
+      return undefined;
+    }
+
+    const position = gl.getAttribLocation(program, 'a_position');
+    const resolution = gl.getUniformLocation(program, 'u_resolution');
+    const contentBounds = gl.getUniformLocation(program, 'u_contentBounds');
+    const time = gl.getUniformLocation(program, 'u_time');
+    const seed = gl.getUniformLocation(program, 'u_seed');
+    if (position < 0 || !resolution || !contentBounds || !time || !seed) return undefined;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+      gl.STATIC_DRAW,
+    );
+    gl.clearColor(0, 0, 0, 0);
+    gl.disable(gl.DEPTH_TEST);
+
+    return { gl, program, buffer, position, resolution, contentBounds, time, seed };
+  }
+
+  function initialiseScreenSignal(canvas: HTMLCanvasElement) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const forcedColours = window.matchMedia('(forced-colors: active)');
+    const printMode = window.matchMedia('print');
+    let renderer: Renderer | undefined;
+    let scheduleTimer = 0;
+    let animationFrame = 0;
+    let burstStart = 0;
+    let burstSeed = 0;
+    let contentLeft = 0.22;
+    let contentRight = 0.78;
+    let suspendedForPrint = false;
+    let contextLost = false;
+
+    const effectsDisabled = () =>
+      document.hidden
+      || suspendedForPrint
+      || reducedMotion.matches
+      || forcedColours.matches
+      || printMode.matches;
+
+    const resizeCanvas = () => {
+      if (!renderer) return;
+      const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+      const width = Math.max(1, Math.round(window.innerWidth * pixelRatio));
+      const height = Math.max(1, Math.round(window.innerHeight * pixelRatio));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      renderer.gl.viewport(0, 0, width, height);
+    };
+
+    const measureContentBounds = () => {
+      const content = document.querySelector<HTMLElement>('main .wrap');
+      const contentRect = content?.getBoundingClientRect();
+      if (!contentRect || window.innerWidth <= 0) return;
+      contentLeft = contentRect.left / window.innerWidth;
+      contentRight = contentRect.right / window.innerWidth;
+    };
+
+    const clear = () => {
+      if (!renderer || contextLost) return;
+      renderer.gl.clear(renderer.gl.COLOR_BUFFER_BIT);
+    };
+
+    const stopBurst = () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+      document.body.classList.remove('desync-active');
+      clear();
+    };
+
+    const cancelSchedule = () => {
+      if (scheduleTimer) window.clearTimeout(scheduleTimer);
+      scheduleTimer = 0;
+    };
+
+    const draw = (now: number) => {
+      if (!renderer || contextLost || effectsDisabled()) {
+        stopBurst();
+        return;
+      }
+
+      const elapsed = now - burstStart;
+      const { gl, program, buffer, position, resolution, contentBounds, time, seed } = renderer;
+      resizeCanvas();
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.enableVertexAttribArray(position);
+      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+      gl.uniform2f(resolution, canvas.width, canvas.height);
+      gl.uniform2f(contentBounds, contentLeft, contentRight);
+      gl.uniform1f(time, elapsed / 1000);
+      gl.uniform1f(seed, burstSeed);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      if (elapsed < BURST_DURATION) {
+        animationFrame = requestAnimationFrame(draw);
+      } else {
+        stopBurst();
+      }
+    };
+
+    const scheduleNext = (first = false) => {
+      cancelSchedule();
+      if (!renderer || contextLost || effectsDisabled()) return;
+      const delay = first
+        ? randomBetween(FIRST_BURST_MIN, FIRST_BURST_MAX)
+        : randomBetween(CADENCE_MIN, CADENCE_MAX);
+      scheduleTimer = window.setTimeout(() => {
+        scheduleTimer = 0;
+        if (!renderer || contextLost || effectsDisabled()) return;
+        stopBurst();
+        resizeCanvas();
+        measureContentBounds();
+        burstSeed = Math.random() * 10;
+        burstStart = performance.now();
+        document.body.classList.add('desync-active');
+        animationFrame = requestAnimationFrame(draw);
+        scheduleNext();
+      }, delay);
+    };
+
+    const suspend = () => {
+      cancelSchedule();
+      stopBurst();
+    };
+
+    const resume = (first = false) => {
+      if (!renderer || contextLost || effectsDisabled()) return;
+      resizeCanvas();
+      scheduleNext(first);
+    };
+
+    const handlePreferenceChange = () => {
+      if (effectsDisabled()) suspend();
+      else resume(true);
+    };
+
+    canvas.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      contextLost = true;
+      suspend();
+      renderer = undefined;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      contextLost = false;
+      renderer = createRenderer(canvas);
+      resume(true);
+    });
+
+    renderer = createRenderer(canvas);
+    if (!renderer) return;
+    resizeCanvas();
+    measureContentBounds();
+    clear();
+    scheduleNext(true);
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      measureContentBounds();
+    }, { passive: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) suspend();
+      else resume(true);
+    });
+    window.addEventListener('pagehide', suspend);
+    window.addEventListener('pageshow', () => resume(true));
+    window.addEventListener('beforeprint', () => {
+      suspendedForPrint = true;
+      suspend();
+    });
+    window.addEventListener('afterprint', () => {
+      suspendedForPrint = false;
+      resume(true);
+    });
+    reducedMotion.addEventListener('change', handlePreferenceChange);
+    forcedColours.addEventListener('change', handlePreferenceChange);
+    printMode.addEventListener('change', handlePreferenceChange);
+  }
+
+  document.querySelectorAll<HTMLCanvasElement>('[data-screen-signal]').forEach(initialiseScreenSignal);
+</script>

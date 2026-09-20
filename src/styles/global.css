@@ -84,48 +84,13 @@ body {
   position: fixed;
   inset: 0;
   z-index: 18;
-  overflow: hidden;
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border-radius: 0;
   pointer-events: none;
   mix-blend-mode: screen;
-}
-
-.screen-signal::before,
-.screen-signal::after {
-  content: '';
-  position: absolute;
-  left: -4%;
-  width: 108%;
-  height: 1px;
-  opacity: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 5%,
-    rgba(98, 255, 198, 0.2) 24%,
-    transparent 49%,
-    rgba(255, 74, 198, 0.16) 73%,
-    transparent 95%
-  );
-  box-shadow:
-    0 1px rgba(74, 226, 255, 0.05),
-    0 -1px rgba(255, 74, 198, 0.04);
-}
-
-.screen-signal::before {
-  top: 31%;
-  animation: signal-tear 8s steps(1, end) infinite;
-}
-
-.screen-signal::after {
-  top: 69%;
-  background: linear-gradient(
-    270deg,
-    transparent 5%,
-    rgba(98, 255, 198, 0.2) 24%,
-    transparent 49%,
-    rgba(255, 74, 198, 0.16) 73%,
-    transparent 95%
-  );
-  animation: signal-tear-mirror 8s 280ms steps(1, end) infinite;
 }
 
 /* CRT texture: fixed scanlines, edge falloff, and brief sync instability. */
@@ -145,7 +110,10 @@ body::before {
     transparent 2px,
     rgba(2, 12, 10, 0.03) 3px
   );
-  animation: scanline-slip 8s steps(1, end) infinite;
+}
+
+body.desync-active::before {
+  animation: scanline-storm 520ms steps(1, end) 1;
 }
 
 body::after {
@@ -175,56 +143,30 @@ body::after {
   }
 }
 
-@keyframes scanline-slip {
-  0%, 96%, 100% {
-    transform: translateY(0);
+@keyframes scanline-storm {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(0, 0) scaleX(1);
   }
-  96.3% {
-    transform: translateY(1px);
+  14% {
+    opacity: 0.82;
+    transform: translate(2px, 1px) scaleX(1.008);
   }
-  96.7% {
-    transform: translateY(-1px);
+  29% {
+    opacity: 1;
+    transform: translate(-3px, -1px) scaleX(1.01);
   }
-  97.1% {
-    transform: translateY(0);
+  47% {
+    opacity: 0.86;
+    transform: translate(4px, 2px) scaleX(1.012);
   }
-}
-
-@keyframes signal-tear {
-  0%, 92%, 94%, 100% {
-    opacity: 0;
-    transform: translateX(0) scaleY(1);
+  66% {
+    opacity: 1;
+    transform: translate(-2px, -1px) scaleX(1.008);
   }
-  92.3% {
-    opacity: 0.28;
-    transform: translateX(-6px) scaleY(1);
-  }
-  92.7% {
-    opacity: 0.12;
-    transform: translateX(4px) scaleY(2);
-  }
-  93.2% {
-    opacity: 0.2;
-    transform: translateX(-2px) scaleY(1);
-  }
-}
-
-@keyframes signal-tear-mirror {
-  0%, 92%, 94%, 100% {
-    opacity: 0;
-    transform: translateX(0) scaleY(1);
-  }
-  92.3% {
-    opacity: 0.25;
-    transform: translateX(6px) scaleY(1);
-  }
-  92.7% {
-    opacity: 0.1;
-    transform: translateX(-4px) scaleY(2);
-  }
-  93.2% {
-    opacity: 0.17;
-    transform: translateX(2px) scaleY(1);
+  82% {
+    opacity: 0.9;
+    transform: translate(1px, 0) scaleX(1.004);
   }
 }
 
@@ -353,10 +295,12 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body,
   body::before,
-  body::after,
-  .screen-signal::before,
-  .screen-signal::after {
+  body::after {
     animation: none;
+  }
+
+  .screen-signal {
+    display: none;
   }
 }
 
