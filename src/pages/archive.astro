@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import OriginalPublication from '../components/OriginalPublication.astro';
+import PageHeading from '../components/PageHeading.astro';
 import SystemLabel from '../components/SystemLabel.astro';
 import { buildEntryIndex, isVisible, byNewest, postUrl, isoDate } from '../utils';
 
@@ -25,7 +26,7 @@ const monthDay = (d: Date) =>
 <BaseLayout title="Archive" description="Every post, by year.">
   <div class="wrap">
     <SystemLabel code="ARCHIVE//ALL_RECORDS" detail={`${posts.length} RECORDS`} />
-    <h1>Archive</h1>
+    <PageHeading>Archive</PageHeading>
     <p class="label">{posts.length} {posts.length === 1 ? 'entry' : 'entries'}</p>
 
     {years.length === 0 ? (

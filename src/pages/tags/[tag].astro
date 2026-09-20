@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeading from '../../components/PageHeading.astro';
 import PostCard from '../../components/PostCard.astro';
 import SystemLabel from '../../components/SystemLabel.astro';
 import { buildEntryIndex, isVisible, byNewest, slugifyTag, url } from '../../utils';
@@ -43,7 +44,7 @@ const { label, posts, entryIds } = Astro.props as Props;
 >
   <div class="wrap">
     <SystemLabel code="FILTER//TAG" detail={`${posts.length} MATCHES`} />
-    <h1>#{label}</h1>
+    <PageHeading>#{label}</PageHeading>
     <p class="label">
       {posts.length} {posts.length === 1 ? 'entry' : 'entries'} &middot;
       <a href={url('tags', import.meta.env.BASE_URL)}>All tags</a>

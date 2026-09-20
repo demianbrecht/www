@@ -1,0 +1,423 @@
+<canvas class="title-short-canvas" data-title-short-canvas aria-hidden="true"></canvas>
+
+<script>
+  interface Spark {
+    x: number;
+    y: number;
+    previousX: number;
+    previousY: number;
+    velocityX: number;
+    velocityY: number;
+    age: number;
+    life: number;
+    delay: number;
+    width: number;
+    trail: number;
+    bounces: number;
+    maxBounces: number;
+    restitution: number;
+    cyan: boolean;
+  }
+
+  interface Smoke {
+    x: number;
+    y: number;
+    velocityX: number;
+    velocityY: number;
+    age: number;
+    life: number;
+    delay: number;
+    radius: number;
+    growth: number;
+    phase: number;
+  }
+
+  const BURST_ONSET = 0.722;
+  const FALLBACK_CYCLE_DURATION = 18_000;
+  const TITLE_BURNOUT_ANIMATION = 'phosphor-burnout';
+
+  function randomBetween(min: number, max: number) {
+    return min + Math.random() * (max - min);
+  }
+
+  function initialiseTitleShortCanvas(canvas: HTMLCanvasElement) {
+    const primary = canvas.closest<HTMLElement>('.site-header-primary');
+    const originMarker = primary?.querySelector<HTMLElement>('[data-title-short-origin]');
+    const context = canvas.getContext('2d');
+
+    if (!primary || !originMarker || !context) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const forcedColours = window.matchMedia('(forced-colors: active)');
+    const printMode = window.matchMedia('print');
+
+    let width = 0;
+    let height = 0;
+    let originX = 0;
+    let originY = 0;
+    let animation: CSSAnimation | undefined;
+    let scheduledBurst = 0;
+    let scheduledCycle = -1;
+    let lastBurstCycle = -1;
+    let animationFrame = 0;
+    let lastFrameTime = 0;
+    let suspendedForPrint = false;
+    let sparks: Spark[] = [];
+    let smoke: Smoke[] = [];
+
+    const effectsDisabled = () =>
+      document.hidden || suspendedForPrint || reducedMotion.matches || forcedColours.matches || printMode.matches;
+
+    const clearCanvas = () => context.clearRect(0, 0, width, height);
+
+    const resizeCanvas = () => {
+      const primaryBounds = primary.getBoundingClientRect();
+      const markerBounds = originMarker.getBoundingClientRect();
+      const nextOriginX = markerBounds.left - primaryBounds.left + markerBounds.width * 0.55;
+      const nextOriginY = markerBounds.top - primaryBounds.top + markerBounds.height * 0.58;
+      const offsetX = nextOriginX - originX;
+      const offsetY = nextOriginY - originY;
+      const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+
+      width = primaryBounds.width;
+      height = primaryBounds.height;
+      originX = nextOriginX;
+      originY = nextOriginY;
+
+      canvas.width = Math.max(1, Math.round(width * pixelRatio));
+      canvas.height = Math.max(1, Math.round(height * pixelRatio));
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+      for (const spark of sparks) {
+        spark.x += offsetX;
+        spark.previousX += offsetX;
+        spark.y += offsetY;
+        spark.previousY += offsetY;
+      }
+      for (const puff of smoke) {
+        puff.x += offsetX;
+        puff.y += offsetY;
+      }
+    };
+
+    const stopActiveEffect = () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+      lastFrameTime = 0;
+      sparks = [];
+      smoke = [];
+      clearCanvas();
+    };
+
+    const cancelScheduledBurst = () => {
+      if (scheduledBurst) window.clearTimeout(scheduledBurst);
+      scheduledBurst = 0;
+      scheduledCycle = -1;
+    };
+
+    const createSparks = () => {
+      const count = Math.floor(randomBetween(12, 17));
+      return Array.from({ length: count }, (_, index): Spark => {
+        const direction = index % 2 === 0 ? -1 : 1;
+        const velocityX = direction * randomBetween(12, 41) + randomBetween(-6, 6);
+        const velocityY = -randomBetween(35, 60);
+
+        return {
+          x: originX,
+          y: originY,
+          previousX: originX,
+          previousY: originY,
+          velocityX,
+          velocityY,
+          age: 0,
+          life: randomBetween(2.05, 2.5),
+          delay: randomBetween(0, 0.15),
+          width: randomBetween(0.55, 1.15),
+          trail: randomBetween(0.028, 0.065),
+          bounces: 0,
+          maxBounces: Math.random() < 0.48 ? 1 : 2,
+          restitution: randomBetween(0.32, 0.44),
+          cyan: index === count - 1 && Math.random() < 0.6,
+        };
+      });
+    };
+
+    const createSmoke = () =>
+      Array.from({ length: 5 }, (_, index): Smoke => ({
+        x: originX + randomBetween(-1.5, 1.5),
+        y: originY - randomBetween(0, 2),
+        velocityX: randomBetween(-5.5, 5.5),
+        velocityY: -randomBetween(7, 14),
+        age: 0,
+        life: randomBetween(2.8, 3.2),
+        delay: 0.05 + index * randomBetween(0.035, 0.07),
+        radius: randomBetween(2.8, 4.2),
+        growth: randomBetween(8, 13),
+        phase: randomBetween(0, Math.PI * 2),
+      }));
+
+    const updateSpark = (spark: Spark, delta: number) => {
+      spark.age += delta;
+      if (spark.age < spark.delay || spark.age >= spark.life) return;
+
+      spark.previousX = spark.x;
+      spark.previousY = spark.y;
+      spark.velocityY += 210 * delta;
+      spark.x += spark.velocityX * delta;
+      spark.y += spark.velocityY * delta;
+
+      if (spark.y < height) return;
+
+      spark.y = height;
+      if (spark.bounces < spark.maxBounces && spark.velocityY > 38) {
+        spark.velocityY = -spark.velocityY * spark.restitution;
+        spark.velocityX *= randomBetween(0.62, 0.78);
+        spark.bounces += 1;
+      } else {
+        spark.velocityY = 0;
+        spark.velocityX *= 0.45;
+        spark.life = Math.min(spark.life, spark.age + 0.1);
+      }
+    };
+
+    const updateSmoke = (puff: Smoke, delta: number) => {
+      puff.age += delta;
+      if (puff.age < puff.delay || puff.age >= puff.life) return;
+
+      const activeAge = puff.age - puff.delay;
+      puff.x += (puff.velocityX + Math.sin(activeAge * 4.2 + puff.phase) * 4.5) * delta;
+      puff.y += puff.velocityY * delta;
+      puff.velocityY -= 1.2 * delta;
+    };
+
+    const drawSpark = (spark: Spark) => {
+      if (spark.age < spark.delay || spark.age >= spark.life) return;
+
+      const progress = (spark.age - spark.delay) / (spark.life - spark.delay);
+      const brightness = Math.max(0, 1 - progress * progress);
+      const speed = Math.hypot(spark.velocityX, spark.velocityY);
+      const trailScale = Math.min(1, speed / 150);
+      const tailX = spark.x - spark.velocityX * spark.trail * trailScale;
+      const tailY = spark.y - spark.velocityY * spark.trail * trailScale;
+      const gradient = context.createLinearGradient(tailX, tailY, spark.x, spark.y);
+
+      if (spark.cyan) {
+        gradient.addColorStop(0, 'rgba(65, 204, 193, 0)');
+        gradient.addColorStop(0.35, `rgba(83, 224, 207, ${0.45 * brightness})`);
+        gradient.addColorStop(1, `rgba(235, 255, 251, ${brightness})`);
+      } else {
+        gradient.addColorStop(0, 'rgba(255, 104, 24, 0)');
+        gradient.addColorStop(0.32, `rgba(255, 128, 28, ${0.62 * brightness})`);
+        gradient.addColorStop(0.72, `rgba(255, 210, 92, ${0.9 * brightness})`);
+        gradient.addColorStop(1, `rgba(255, 255, 238, ${brightness})`);
+      }
+
+      context.save();
+      context.globalCompositeOperation = 'lighter';
+      context.strokeStyle = gradient;
+      context.lineWidth = spark.width;
+      context.lineCap = 'round';
+      context.shadowBlur = 3.5;
+      context.shadowColor = spark.cyan
+        ? `rgba(76, 226, 207, ${0.55 * brightness})`
+        : `rgba(255, 142, 36, ${0.68 * brightness})`;
+      context.beginPath();
+      context.moveTo(tailX, tailY);
+      context.lineTo(spark.x, spark.y);
+      context.stroke();
+
+      context.shadowBlur = 1.5;
+      context.fillStyle = spark.cyan
+        ? `rgba(235, 255, 251, ${brightness})`
+        : `rgba(255, 255, 242, ${brightness})`;
+      context.beginPath();
+      context.arc(spark.x, spark.y, spark.width * 0.62, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    };
+
+    const drawSmoke = (puff: Smoke) => {
+      if (puff.age < puff.delay || puff.age >= puff.life) return;
+
+      const progress = (puff.age - puff.delay) / (puff.life - puff.delay);
+      const envelope = Math.sin(Math.PI * Math.min(1, progress));
+      const opacity = 0.24 * envelope * (1 - progress * 0.42);
+      const radius = puff.radius + puff.growth * progress;
+      const gradient = context.createRadialGradient(
+        puff.x - radius * 0.12,
+        puff.y - radius * 0.12,
+        0,
+        puff.x,
+        puff.y,
+        radius,
+      );
+
+      gradient.addColorStop(0, `rgba(192, 207, 204, ${opacity})`);
+      gradient.addColorStop(0.38, `rgba(125, 151, 149, ${opacity * 0.68})`);
+      gradient.addColorStop(0.72, `rgba(74, 113, 111, ${opacity * 0.26})`);
+      gradient.addColorStop(1, 'rgba(44, 69, 69, 0)');
+
+      context.save();
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.ellipse(
+        puff.x,
+        puff.y,
+        radius * (0.74 + progress * 0.18),
+        radius,
+        Math.sin(puff.phase) * 0.18,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+      context.restore();
+    };
+
+    const renderFrame = (time: number) => {
+      if (effectsDisabled()) {
+        stopActiveEffect();
+        return;
+      }
+
+      const delta = lastFrameTime ? Math.min((time - lastFrameTime) / 1000, 0.033) : 0;
+      lastFrameTime = time;
+      clearCanvas();
+
+      for (const spark of sparks) updateSpark(spark, delta);
+      for (const puff of smoke) updateSmoke(puff, delta);
+      for (const puff of smoke) drawSmoke(puff);
+      for (const spark of sparks) drawSpark(spark);
+
+      const sparksRemain = sparks.some((spark) => spark.age < spark.life);
+      const smokeRemains = smoke.some((puff) => puff.age < puff.life);
+      if (sparksRemain || smokeRemains) {
+        animationFrame = requestAnimationFrame(renderFrame);
+      } else {
+        animationFrame = 0;
+        lastFrameTime = 0;
+        sparks = [];
+        smoke = [];
+        clearCanvas();
+      }
+    };
+
+    const startBurst = () => {
+      if (effectsDisabled()) return;
+      stopActiveEffect();
+      resizeCanvas();
+      sparks = createSparks();
+      smoke = createSmoke();
+      animationFrame = requestAnimationFrame(renderFrame);
+    };
+
+    const getAnimationTime = () => {
+      const rawTime = animation?.currentTime;
+      if (rawTime === null || rawTime === undefined) return undefined;
+      const value = Number(rawTime);
+      return Number.isFinite(value) ? value : undefined;
+    };
+
+    const scheduleNextBurst = () => {
+      cancelScheduledBurst();
+      if (effectsDisabled() || !animation) return;
+
+      const currentTime = getAnimationTime();
+      const timing = animation.effect?.getComputedTiming();
+      const duration = typeof timing?.duration === 'number' ? timing.duration : FALLBACK_CYCLE_DURATION;
+      if (currentTime === undefined || duration <= 0) return;
+
+      const currentCycle = Math.floor(currentTime / duration);
+      const phase = currentTime - currentCycle * duration;
+      const onset = duration * BURST_ONSET;
+      scheduledCycle = phase < onset ? currentCycle : currentCycle + 1;
+      const scheduledAnimationTime = scheduledCycle * duration + onset;
+      const playbackRate = Math.max(0.01, Math.abs(animation.playbackRate || 1));
+      const delay = Math.max(0, (scheduledAnimationTime - currentTime) / playbackRate);
+
+      scheduledBurst = window.setTimeout(() => {
+        scheduledBurst = 0;
+        if (effectsDisabled() || !animation) return;
+
+        const actualTime = getAnimationTime();
+        if (actualTime === undefined) return;
+
+        const lateness = actualTime - scheduledAnimationTime;
+        if (lateness < -8) {
+          scheduleNextBurst();
+          return;
+        }
+        if (lateness <= 250 && lastBurstCycle !== scheduledCycle) {
+          lastBurstCycle = scheduledCycle;
+          startBurst();
+        }
+        scheduleNextBurst();
+      }, delay);
+    };
+
+    const findBurnoutAnimation = (attempt = 0) => {
+      if (effectsDisabled()) return;
+
+      const nextAnimation = originMarker
+        .getAnimations()
+        .find(
+          (candidate): candidate is CSSAnimation =>
+            candidate instanceof CSSAnimation && candidate.animationName === TITLE_BURNOUT_ANIMATION,
+        );
+
+      if (nextAnimation !== animation) lastBurstCycle = -1;
+      animation = nextAnimation;
+
+      if (animation) {
+        scheduleNextBurst();
+      } else if (attempt < 8) {
+        requestAnimationFrame(() => findBurnoutAnimation(attempt + 1));
+      }
+    };
+
+    const suspend = () => {
+      cancelScheduledBurst();
+      stopActiveEffect();
+    };
+
+    const resume = () => {
+      if (effectsDisabled()) return;
+      resizeCanvas();
+      requestAnimationFrame(() => findBurnoutAnimation());
+    };
+
+    const handlePreferenceChange = () => {
+      if (effectsDisabled()) {
+        suspend();
+      } else {
+        resume();
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(resizeCanvas);
+    resizeObserver.observe(primary);
+    resizeObserver.observe(originMarker);
+    resizeCanvas();
+    resume();
+
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) suspend();
+      else resume();
+    });
+    window.addEventListener('pagehide', suspend);
+    window.addEventListener('pageshow', resume);
+    window.addEventListener('beforeprint', () => {
+      suspendedForPrint = true;
+      suspend();
+    });
+    window.addEventListener('afterprint', () => {
+      suspendedForPrint = false;
+      resume();
+    });
+    reducedMotion.addEventListener('change', handlePreferenceChange);
+    forcedColours.addEventListener('change', handlePreferenceChange);
+    printMode.addEventListener('change', handlePreferenceChange);
+  }
+
+  document.querySelectorAll<HTMLCanvasElement>('[data-title-short-canvas]').forEach(initialiseTitleShortCanvas);
+</script>

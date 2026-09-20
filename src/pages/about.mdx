@@ -8,6 +8,7 @@ description: About this site and its author.
 import { Image } from 'astro:assets';
 import { url as href } from '../utils';
 import { SOCIAL_LINKS } from '../consts';
+import PageHeading from '../components/PageHeading.astro';
 import SystemLabel from '../components/SystemLabel.astro';
 import retroPortrait from '../assets/me-retro.png';
 
@@ -15,7 +16,7 @@ import retroPortrait from '../assets/me-retro.png';
 
 <SystemLabel code="PROFILE//OPERATOR" detail="LOCAL NODE" />
 
-# About
+<PageHeading>About</PageHeading>
 
 <div class="about-grid">
 

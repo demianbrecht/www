@@ -2,9 +2,10 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
+import PageHeading from '../components/PageHeading.astro';
 import SeriesCard from '../components/SeriesCard.astro';
 import SystemLabel from '../components/SystemLabel.astro';
-import { SITE_TITLE, SITE_TAGLINE } from '../consts';
+import { SITE_TAGLINE } from '../consts';
 import { buildEntryIndex, isCurrent, isVisible, slugify, url } from '../utils';
 import { buildTimeline, seriesMetadata } from '../timeline';
 
@@ -19,7 +20,7 @@ const timeline = buildTimeline(posts, series);
   <div class="wrap">
     <section class="hero">
       <SystemLabel code="NODE//WRITING_INDEX" detail="MODE/READ_ONLY" />
-      <h1>{SITE_TITLE}</h1>
+      <PageHeading>Posts</PageHeading>
       <p class="tagline">{SITE_TAGLINE}</p>
     </section>
 

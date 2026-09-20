@@ -1,13 +1,22 @@
 ---
-import { SITE_TITLE, NAV_LINKS, SOCIAL_LINKS } from '../consts';
+import { SITE_TITLE, NAV_LINKS, SOCIAL_LINKS, START_HERE_LINK } from '../consts';
 import { url } from '../utils';
 import SiteTitle from './SiteTitle.astro';
 import SocialIcon from './SocialIcon.astro';
+import TitleShortCanvas from './TitleShortCanvas.astro';
 
 /** Current path with base and trailing slash stripped, for nav highlighting. */
-const current =
-  Astro.url.pathname.replace(import.meta.env.BASE_URL, '').replace(/\/$/, '') || '/';
 const baseUrl = import.meta.env.BASE_URL;
+const basePath = baseUrl === '/' ? '' : baseUrl.replace(/\/$/, '');
+const pathWithoutBase = basePath && Astro.url.pathname.startsWith(basePath)
+  ? Astro.url.pathname.slice(basePath.length)
+  : Astro.url.pathname;
+const current = `/${pathWithoutBase.replace(/^\/+|\/+$/g, '')}`;
+const isCurrent = (href: string) => {
+  const target = href.replace(/\/$/, '') || '/';
+  return current === target || (target !== '/' && current.startsWith(`${target}/`));
+};
+const startHereBurnoutIndex = START_HERE_LINK.label.lastIndexOf('e');
 ---
 
 <header class="site-header">
@@ -16,37 +25,42 @@ const baseUrl = import.meta.env.BASE_URL;
       <SiteTitle />
     </a>
     <nav class="site-nav" aria-label="Main">
-      {NAV_LINKS.map(({ href, label, featured }) => {
-        const target = href.replace(/\/$/, '') || '/';
-        const isCurrent = target === '/'
-          ? current === '/'
-          : current === target || current.startsWith(`${target}/`);
-        const burnoutIndex = featured ? label.indexOf('e') : -1;
-        return (
-          <a
-            class:list={['signal-link', { 'start-here-link': featured }]}
-            href={url(href, baseUrl)}
-            aria-current={isCurrent ? 'page' : undefined}
-            aria-label={featured ? label : undefined}
-          >
-            {featured ? (
-              <span aria-hidden="true">
-                {label.slice(0, burnoutIndex)}<span class="burnout-letter start-here-burnout">{label[burnoutIndex]}</span>{label.slice(burnoutIndex + 1)}
-              </span>
-            ) : label}
-          </a>
-        );
-      })}
-    </nav>
-  </div>
-  <div class="social-bar">
-    <nav class="wrap social-nav" aria-label="Social profiles">
-      {SOCIAL_LINKS.map(({ href, label }) => (
-        <a class="signal-link" href={href} rel="me">
-          <SocialIcon name={label} />
-          <span>{label}</span>
+      {NAV_LINKS.map(({ href, label }) => (
+        <a
+          class="signal-link"
+          href={url(href, baseUrl)}
+          aria-current={isCurrent(href) ? 'page' : undefined}
+        >
+          {label}
         </a>
       ))}
     </nav>
+    <TitleShortCanvas />
+  </div>
+  <div class="social-bar">
+    <div class="wrap secondary-bar-inner">
+      <nav class="start-here-nav" aria-label="Featured">
+        <a
+          class="start-here-feature signal-link"
+          href={url(START_HERE_LINK.href, baseUrl)}
+          aria-current={isCurrent(START_HERE_LINK.href) ? 'page' : undefined}
+          aria-label={START_HERE_LINK.label}
+        >
+          <span class="page-heading-prefix start-here-mark" aria-hidden="true">//</span>
+          <span class="start-here-label" aria-hidden="true">
+            {START_HERE_LINK.label.slice(0, startHereBurnoutIndex)}<span class="burnout-letter start-here-burnout">{START_HERE_LINK.label[startHereBurnoutIndex]}</span>{START_HERE_LINK.label.slice(startHereBurnoutIndex + 1)}
+          </span>
+          <span class="page-heading-prefix start-here-mark" aria-hidden="true">//</span>
+        </a>
+      </nav>
+      <nav class="social-nav" aria-label="Social profiles">
+        {SOCIAL_LINKS.map(({ href, label }) => (
+          <a class="signal-link" href={href} rel="me" aria-label={label}>
+            <SocialIcon name={label} />
+            <span>{label}</span>
+          </a>
+        ))}
+      </nav>
+    </div>
   </div>
 </header>

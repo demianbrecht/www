@@ -6,12 +6,15 @@ export const SITE_DESCRIPTION =
 export const AUTHOR = 'Demian Brecht';
 
 export const NAV_LINKS = [
-  { href: '/', label: 'Posts' },
-  { href: '/agentic-engineering', label: 'Start Here', featured: true },
   { href: '/archive', label: 'Archive' },
   { href: '/tags', label: 'Tags' },
   { href: '/about', label: 'About' },
-];
+] as const;
+
+export const START_HERE_LINK = {
+  href: '/agentic-engineering',
+  label: 'Start Here',
+} as const;
 
 export const SOCIAL_LINKS = [
   {

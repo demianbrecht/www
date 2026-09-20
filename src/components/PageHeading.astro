@@ -1,0 +1,14 @@
+---
+interface Props {
+  class?: string;
+  id?: string;
+  style?: string;
+}
+
+const { class: className, ...attributes } = Astro.props;
+---
+
+<h1 class:list={['page-heading', className]} {...attributes}>
+  <span class="page-heading-prefix" aria-hidden="true">//</span>
+  <span class="page-heading-text"><slot /></span>
+</h1>
