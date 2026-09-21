@@ -69,11 +69,19 @@ describe('non-root builds', () => {
       expect(home).not.toContain('Entry points in Python');
       expect(home).not.toContain('Advanced Mercurial Debugging');
       expect(home).not.toContain('My learnings on delivering technical presentations');
+      expect(home).not.toContain('Automating Android Burp API Testing');
+      expect(home).not.toContain('Why the hell is my code so slow?!');
+      expect(home).not.toContain('You will pry vim from my cold, dead hands');
+      expect(home).not.toContain('slagging your code. Not you.');
       expect(archive).toContain('Entry points in Python');
       expect(archive).toContain('Advanced Mercurial Debugging');
       expect(archive).toContain('My learnings on delivering technical presentations');
+      expect(archive).toContain('Automating Android Burp API Testing');
+      expect(archive).toContain('Why the hell is my code so slow?!');
+      expect(archive).toContain('You will pry vim from my cold, dead hands');
+      expect(archive).toContain('slagging your code. Not you.');
       expect(occurrences(archive, 'Originally published in ')).toBe(5);
-      expect(occurrences(home, 'Originally published in ')).toBe(5);
+      expect(occurrences(home, 'Originally published in ')).toBe(4);
       expect(archive).toContain('Salesforce Engineering');
       expect(home).toContain('Salesforce Engineering');
     } finally {
