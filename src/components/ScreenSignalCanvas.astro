@@ -22,7 +22,7 @@
 
     varying vec2 v_uv;
     uniform vec2 u_resolution;
-    uniform vec2 u_contentBounds;
+    uniform float u_pixelRatio;
     uniform float u_time;
     uniform float u_seed;
 
@@ -60,7 +60,8 @@
       for (int index = 0; index < 8; index++) {
         float bandIndex = float(index);
         float centre = 0.09 + hash11(bandIndex + 1.0) * 0.82;
-        float thicknessPixels = 0.45 + hash11(bandIndex + 17.0) * 1.8;
+        float thicknessCssPixels = 0.35 + hash11(bandIndex + 17.0) * 1.65;
+        float thicknessPixels = thicknessCssPixels * u_pixelRatio;
         float halfWidth = thicknessPixels / max(u_resolution.y, 1.0);
         float start = hash11(bandIndex + 29.0) * 0.17;
         float duration = 0.15 + hash11(bandIndex + 43.0) * 0.2;
@@ -70,12 +71,13 @@
         float pulse = burstPulse(u_time, start, duration);
         float greenBand = bandMask(v_uv.y, centre, halfWidth) * segments * pulse;
 
-        float splitPixels = 1.2 + hash11(bandIndex + 71.0) * 2.7;
-        float split = splitPixels / max(u_resolution.y, 1.0);
-        float cyanEdge = bandMask(v_uv.y, centre + split, halfWidth * 0.42)
-          * segments * pulse * 0.34;
-        float magentaEdge = bandMask(v_uv.y, centre - split, halfWidth * 0.36)
-          * segments * pulse * 0.26;
+        float colourShift = 1.2 * u_pixelRatio / max(u_resolution.x, 1.0);
+        float cyanSegments = segmentedNoise(fract(x + colourShift), bandIndex, frame);
+        float magentaSegments = segmentedNoise(fract(x - colourShift), bandIndex, frame);
+        float cyanEdge = bandMask(v_uv.y, centre, halfWidth * 0.42)
+          * cyanSegments * pulse * 0.34;
+        float magentaEdge = bandMask(v_uv.y, centre, halfWidth * 0.36)
+          * magentaSegments * pulse * 0.26;
 
         colour += vec3(0.12, 1.0, 0.64) * greenBand * 0.62;
         colour += vec3(0.12, 0.8, 1.0) * cyanEdge;
@@ -90,10 +92,20 @@
         float echoSegments = segmentedNoise(echoX, bandIndex + 83.0, frame);
         float echoBand = bandMask(v_uv.y, echoCentre, halfWidth * 0.78)
           * echoSegments * echoPulse;
-        float echoCyan = bandMask(v_uv.y, echoCentre - split, halfWidth * 0.3)
-          * echoSegments * echoPulse * 0.23;
-        float echoMagenta = bandMask(v_uv.y, echoCentre + split, halfWidth * 0.28)
-          * echoSegments * echoPulse * 0.17;
+        float echoCyanSegments = segmentedNoise(
+          fract(echoX - colourShift),
+          bandIndex + 83.0,
+          frame
+        );
+        float echoMagentaSegments = segmentedNoise(
+          fract(echoX + colourShift),
+          bandIndex + 83.0,
+          frame
+        );
+        float echoCyan = bandMask(v_uv.y, echoCentre, halfWidth * 0.3)
+          * echoCyanSegments * echoPulse * 0.23;
+        float echoMagenta = bandMask(v_uv.y, echoCentre, halfWidth * 0.28)
+          * echoMagentaSegments * echoPulse * 0.17;
 
         colour += vec3(0.1, 0.92, 0.58) * echoBand * 0.43;
         colour += vec3(0.1, 0.72, 1.0) * echoCyan;
@@ -106,18 +118,9 @@
       colour += vec3(0.08, 0.54, 0.36) * rollingLine * 0.08;
       coverage += rollingLine * 0.025;
 
-      float contentFeather = 0.035;
-      float insideContent = smoothstep(
-        u_contentBounds.x - contentFeather,
-        u_contentBounds.x + contentFeather,
-        v_uv.x
-      ) * (1.0 - smoothstep(
-        u_contentBounds.y - contentFeather,
-        u_contentBounds.y + contentFeather,
-        v_uv.x
-      ));
-      float readingAttenuation = mix(1.0, 0.2, insideContent);
-      float alpha = clamp(coverage * globalEnvelope * readingAttenuation, 0.0, 0.48);
+      float edgeDistance = min(v_uv.x, 1.0 - v_uv.x);
+      float edgeMask = 1.0 - smoothstep(0.035, 0.16, edgeDistance);
+      float alpha = clamp(coverage * globalEnvelope * edgeMask, 0.0, 0.48);
       colour = min(colour * globalEnvelope, vec3(1.0));
       gl_FragColor = vec4(colour * alpha, alpha);
     }
@@ -129,7 +132,7 @@
     buffer: WebGLBuffer;
     position: number;
     resolution: WebGLUniformLocation;
-    contentBounds: WebGLUniformLocation;
+    pixelRatio: WebGLUniformLocation;
     time: WebGLUniformLocation;
     seed: WebGLUniformLocation;
   }
@@ -189,10 +192,10 @@
 
     const position = gl.getAttribLocation(program, 'a_position');
     const resolution = gl.getUniformLocation(program, 'u_resolution');
-    const contentBounds = gl.getUniformLocation(program, 'u_contentBounds');
+    const pixelRatio = gl.getUniformLocation(program, 'u_pixelRatio');
     const time = gl.getUniformLocation(program, 'u_time');
     const seed = gl.getUniformLocation(program, 'u_seed');
-    if (position < 0 || !resolution || !contentBounds || !time || !seed) return undefined;
+    if (position < 0 || !resolution || !pixelRatio || !time || !seed) return undefined;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(
@@ -203,7 +206,7 @@
     gl.clearColor(0, 0, 0, 0);
     gl.disable(gl.DEPTH_TEST);
 
-    return { gl, program, buffer, position, resolution, contentBounds, time, seed };
+    return { gl, program, buffer, position, resolution, pixelRatio, time, seed };
   }
 
   function initialiseScreenSignal(canvas: HTMLCanvasElement) {
@@ -215,8 +218,6 @@
     let animationFrame = 0;
     let burstStart = 0;
     let burstSeed = 0;
-    let contentLeft = 0.22;
-    let contentRight = 0.78;
     let suspendedForPrint = false;
     let contextLost = false;
 
@@ -237,14 +238,6 @@
         canvas.height = height;
       }
       renderer.gl.viewport(0, 0, width, height);
-    };
-
-    const measureContentBounds = () => {
-      const content = document.querySelector<HTMLElement>('main .wrap');
-      const contentRect = content?.getBoundingClientRect();
-      if (!contentRect || window.innerWidth <= 0) return;
-      contentLeft = contentRect.left / window.innerWidth;
-      contentRight = contentRect.right / window.innerWidth;
     };
 
     const clear = () => {
@@ -271,7 +264,7 @@
       }
 
       const elapsed = now - burstStart;
-      const { gl, program, buffer, position, resolution, contentBounds, time, seed } = renderer;
+      const { gl, program, buffer, position, resolution, pixelRatio, time, seed } = renderer;
       resizeCanvas();
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(program);
@@ -279,7 +272,7 @@
       gl.enableVertexAttribArray(position);
       gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
       gl.uniform2f(resolution, canvas.width, canvas.height);
-      gl.uniform2f(contentBounds, contentLeft, contentRight);
+      gl.uniform1f(pixelRatio, canvas.width / Math.max(window.innerWidth, 1));
       gl.uniform1f(time, elapsed / 1000);
       gl.uniform1f(seed, burstSeed);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -302,7 +295,6 @@
         if (!renderer || contextLost || effectsDisabled()) return;
         stopBurst();
         resizeCanvas();
-        measureContentBounds();
         burstSeed = Math.random() * 10;
         burstStart = performance.now();
         document.body.classList.add('desync-active');
@@ -342,14 +334,10 @@
     renderer = createRenderer(canvas);
     if (!renderer) return;
     resizeCanvas();
-    measureContentBounds();
     clear();
     scheduleNext(true);
 
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      measureContentBounds();
-    }, { passive: true });
+    window.addEventListener('resize', resizeCanvas, { passive: true });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) suspend();
       else resume(true);
