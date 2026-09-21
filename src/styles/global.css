@@ -1309,6 +1309,55 @@ main {
   letter-spacing: 0.025em;
 }
 
+.agentic-research-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.agentic-research-panel {
+  position: relative;
+  min-width: 0;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px dashed rgba(151, 163, 177, 0.34);
+  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 0.45rem,
+      rgba(151, 163, 177, 0.025) 0.45rem,
+      rgba(151, 163, 177, 0.025) 0.5rem
+    ),
+    rgba(18, 21, 26, 0.64);
+}
+
+.agentic-research-panel::after {
+  content: '';
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.6rem;
+  width: 1.75rem;
+  height: 0.3rem;
+  border-block: 1px solid rgba(151, 163, 177, 0.22);
+}
+
+.agentic-research-status {
+  margin: 0 0 0.7rem;
+  color: var(--text-fainter);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-variant-ligatures: none;
+  letter-spacing: 0.06em;
+}
+
+.agentic-research-panel h3 {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.98rem;
+}
+
 .agentic-project {
   display: block;
   margin-top: 3.75rem;
@@ -1677,6 +1726,8 @@ main {
   .home-hub-enter { justify-self: start; }
 
   .agentic-card-grid { grid-template-columns: minmax(0, 1fr); }
+
+  .agentic-research-grid { grid-template-columns: minmax(0, 1fr); }
 
   .agentic-read-first,
   .agentic-project {
