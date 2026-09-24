@@ -28,6 +28,11 @@ export const SOCIAL_LINKS = [
     href: 'https://github.com/demianbrecht',
   },
   {
+    label: 'Reddit',
+    handle: 'u/mostly_deterministic',
+    href: 'https://www.reddit.com/user/mostly_deterministic/',
+  },
+  {
     label: 'X',
     handle: '@demianbrecht',
     href: 'https://x.com/demianbrecht',
