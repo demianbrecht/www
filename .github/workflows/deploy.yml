@@ -9,6 +9,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      replay_before_sha:
+        description: Commit before the missed publication
+        required: false
+        type: string
+      replay_after_sha:
+        description: Commit containing the missed publication
+        required: false
+        type: string
 
 # Allow this workflow to publish to Pages via OIDC.
 permissions:
@@ -48,7 +57,7 @@ jobs:
 
   notify-subscribers:
     needs: deploy
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (inputs.replay_before_sha != '' && inputs.replay_after_sha != '')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout publication history
@@ -58,7 +67,7 @@ jobs:
       - name: Send newly public posts through Kit
         run: node scripts/publish-kit-broadcasts.mjs
         env:
-          BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
+          BEFORE_SHA: ${{ github.event_name == 'push' && github.event.before || inputs.replay_before_sha }}
+          AFTER_SHA: ${{ github.event_name == 'push' && github.sha || inputs.replay_after_sha }}
           KIT_API_KEY: ${{ secrets.KIT_API_KEY }}
           SITE_URL: https://demianbrecht.com

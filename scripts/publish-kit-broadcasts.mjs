@@ -100,7 +100,7 @@ export function broadcastFor(post, siteUrl, marker, now) {
     public: false,
     published_at: now,
     send_at: new Date(Date.parse(now) + 60_000).toISOString(),
-    subscriber_filter: [{ all: [{ type: 'all_subscribers' }] }],
+    // Kit defaults to all subscribers when no segment or tag filter is supplied.
   };
 }
 

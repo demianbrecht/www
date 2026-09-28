@@ -141,8 +141,8 @@ describe('Kit broadcast payload', () => {
       send_at: '2026-09-18T12:01:00.000Z',
       preview_text: description,
       description: expect.stringContaining('[www-publication:sha:path]'),
-      subscriber_filter: [{ all: [{ type: 'all_subscribers' }] }],
     });
+    expect(payload).not.toHaveProperty('subscriber_filter');
     expect(payload.content).toContain('A &lt;post&gt;');
     expect(payload.content).toContain('https://demianbrecht.com/posts/a-post/');
   });
