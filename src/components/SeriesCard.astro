@@ -12,12 +12,12 @@ interface Props {
 
 const { series, members, entryIds } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL;
+const titlePrefix = `${series.title}: `;
 ---
 
 <article class="series-card" data-timeline-kind="series">
   <div class="series-heading">
     <p class="series-label">Series</p>
-    <time datetime={isoDate(series.pubDate)}>{formatDate(series.pubDate)}</time>
   </div>
   <h2>{series.title}</h2>
   <p class="series-description">{series.description}</p>
@@ -29,7 +29,12 @@ const baseUrl = import.meta.env.BASE_URL;
           <span>part {String(part).padStart(2, '0')}</span>
         </span>
         <div>
-          <a class="signal-link" href={postUrl(post.id, baseUrl)}>{post.data.title}</a>
+          <a class="signal-link" href={postUrl(post.id, baseUrl)}>
+            {post.data.title.startsWith(titlePrefix)
+              ? post.data.title.slice(titlePrefix.length)
+              : post.data.title}
+          </a>
+          <time class="post-date" datetime={isoDate(post.data.pubDate)}>{formatDate(post.data.pubDate)}</time>
           <OriginalPublication publication={post.data.originallyPublished} />
         </div>
       </li>
@@ -91,6 +96,14 @@ const baseUrl = import.meta.env.BASE_URL;
   .part .record-id { color: var(--accent); }
 
   .series-members a { font-weight: 600; }
+
+  .post-date {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
 
   :global(.series-members .attribution) {
     margin: 0.2rem 0 0;

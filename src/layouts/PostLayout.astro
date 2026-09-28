@@ -61,7 +61,8 @@ const shareUrl = new URL(Astro.url.pathname, Astro.site).href;
 
         {series && (
           <p class="series-meta">
-            {series.title} / part {series.part} of {series.total}
+            {series.title} / part {series.part}
+            {series.id !== 'the-harness-within-the-harness' && ` of ${series.total}`}
           </p>
         )}
 

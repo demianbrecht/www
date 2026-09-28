@@ -8,6 +8,7 @@ description: A practical guide to agentic engineering, coding-agent architecture
 import { url as href } from '../utils';
 import PageHeading from '../components/PageHeading.astro';
 import SystemLabel from '../components/SystemLabel.astro';
+import SocialIcon from '../components/SocialIcon.astro';
 
 <div class="wrap">
 <article class="agentic-hub">
@@ -155,31 +156,55 @@ you’re building.
       <p>Apply the boundary to work that needs both judgment and operational discipline.</p>
     </div>
   </div>
-  <div class="agentic-card-grid agentic-card-grid-single">
+  <div class="agentic-card-grid">
     <a class="agentic-card" href={href('/posts/runtime-qa-give-the-agent-the-loop-not-the-last-word')}>
       <span class="agentic-card-code">PRACTICE_01</span>
       <h3>Runtime QA: Give the Agent the Loop, Not the Last Word</h3>
       <p>Let the agent own a bounded investigative loop while software makes the mechanics reviewable and a person retains the consequential decisions.</p>
       <span class="agentic-card-action">Run the investigation <span aria-hidden="true">→</span></span>
     </a>
+    <a class="agentic-card" href={href('/posts/pr-council-a-runnable-experiment-in-agentic-engineering')}>
+      <span class="agentic-card-code">PRACTICE_02</span>
+      <h3>PR Council: A Runnable Experiment in Agentic Engineering</h3>
+      <p>Explore a durable PR review workflow that combines independent model perspectives with deterministic orchestration, bounded tools, and human approval.</p>
+      <span class="agentic-card-action">See the workflow <span aria-hidden="true">→</span></span>
+    </a>
   </div>
 </section>
 
-<section class="agentic-project" aria-labelledby="implementations">
+<section class="agentic-implementations" aria-labelledby="implementations">
   <div class="agentic-section-label">05 // IMPLEMENTATIONS</div>
-  <h2 id="implementations">Switchplane</h2>
-  <p>
-    Switchplane was an experimental Python runtime control plane for local,
-    long-running agent workflows. It put deterministic flow around model calls
-    and provided supervised execution, durable task state, CLI/TUI operation,
-    and MCP integration. The project yielded a ton of learnings, but I’ve since
-    switched gears. I now put agentic systems behind an MCP boundary, letting
-    the conversational harness drive bounded systems rather than treating a
-    standalone runtime as the primary interface.
-  </p>
-  <a class="agentic-project-link signal-link" href="https://github.com/salesforce-misc/switchplane">
-    Explore the experiment on <span class="signal-tail">GitHub <span aria-hidden="true">↗</span></span>
-  </a>
+  <h2 id="implementations">Systems built from these ideas</h2>
+  <div class="agentic-implementation-grid">
+    <article class="agentic-implementation-card agentic-implementation-card-council">
+      <p class="agentic-implementation-kind">REVIEW_WORKFLOW // MCP</p>
+      <h3>PR Council</h3>
+      <p>
+        A local PR review system combining independent quality and security
+        reviews, bounded model calls, sandboxed tools, durable workflow state,
+        and a human-approved publishing step.
+      </p>
+      <a class="agentic-project-link signal-link" href="https://github.com/salesforce-misc/pr-council-mcp">
+        <SocialIcon name="GitHub" />
+        <span>salesforce-misc/pr-council-mcp</span>
+        <span class="signal-tail" aria-hidden="true">↗</span>
+      </a>
+    </article>
+    <article class="agentic-implementation-card agentic-implementation-card-switchplane">
+      <p class="agentic-implementation-kind">RUNTIME_CONTROL_PLANE // PYTHON</p>
+      <h3>Switchplane</h3>
+      <p>
+        A Python runtime control plane for local, long-running agent workflows.
+        It provides supervised execution, durable task state, CLI/TUI operation,
+        and MCP integration.
+      </p>
+      <a class="agentic-project-link signal-link" href="https://github.com/salesforce-misc/switchplane">
+        <SocialIcon name="GitHub" />
+        <span>salesforce-misc/switchplane</span>
+        <span class="signal-tail" aria-hidden="true">↗</span>
+      </a>
+    </article>
+  </div>
 </section>
 
 </article>

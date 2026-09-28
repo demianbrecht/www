@@ -17,7 +17,6 @@ export interface SeriesMetadata {
   id: string;
   title: string;
   description: string;
-  pubDate: Date;
   posts: Array<string | { id: string }>;
 }
 
@@ -73,11 +72,15 @@ export function buildTimeline<T extends TimelinePost>(
     }
 
     if (members.length > 0) {
+      const pubDate = members.reduce(
+        (latest, { post }) => post.data.pubDate > latest ? post.data.pubDate : latest,
+        members[0].post.data.pubDate,
+      );
       items.push({
         type: 'series',
         series,
         members,
-        pubDate: series.pubDate,
+        pubDate,
       });
     }
   }

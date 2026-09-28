@@ -1,0 +1,253 @@
+---
+import SocialIcon from './SocialIcon.astro';
+---
+
+<aside class="council-summary" aria-labelledby="council-summary-title">
+  <header class="summary-header">
+    <div>
+      <p class="summary-kicker">EXECUTIVE SIGNAL</p>
+      <h2 id="council-summary-title">TL;DR</h2>
+    </div>
+    <span class="summary-status" aria-hidden="true"><i></i> EXPERIMENTAL SYSTEM</span>
+  </header>
+
+  <div class="summary-copy"><slot /></div>
+
+  <div
+    class="responsibility-map"
+    role="group"
+    aria-label="MCP provides the seam, LangGraph controls orchestration and state, and agents contribute bounded judgement"
+  >
+    <div class="responsibility-node">
+      <small>INTERFACE</small><strong>MCP</strong><span>the seam</span>
+    </div>
+    <span class="map-connector" aria-hidden="true"><i></i></span>
+    <div class="responsibility-node node-core">
+      <small>CONTROL</small><strong>LangGraph</strong><span>orchestration + state</span>
+    </div>
+    <span class="map-connector" aria-hidden="true"><i></i></span>
+    <div class="responsibility-node">
+      <small>JUDGEMENT</small><strong>Agents</strong><span>only where required</span>
+    </div>
+  </div>
+
+  <nav class="summary-links" aria-label="PR Council source repositories">
+    <span class="github-icon"><SocialIcon name="GitHub" /></span>
+    <a href="https://github.com/salesforce-misc/pr-council-mcp">PR Council <span aria-hidden="true">↗</span></a>
+    <span class="link-divider" aria-hidden="true">/</span>
+    <a href="https://github.com/salesforce-misc/localmcplib">localmcplib <span aria-hidden="true">↗</span></a>
+  </nav>
+</aside>
+
+<style>
+  .council-summary {
+    position: relative;
+    margin: 0 0 2.5rem;
+    padding: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--border-lit);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(115deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 48%),
+      linear-gradient(color-mix(in srgb, var(--accent) 2.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 2.5%, transparent) 1px, transparent 1px),
+      var(--bg-raised);
+    background-size: auto, 24px 24px, 24px 24px, auto;
+    box-shadow: inset 0 0 3.5rem rgb(0 0 0 / 12%);
+  }
+
+  .council-summary::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent));
+    content: "";
+    opacity: 0.75;
+  }
+
+  .summary-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.05rem 0.1rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-kicker,
+  .summary-header h2 { margin: 0; }
+
+  .summary-kicker {
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .summary-header h2 {
+    margin-top: 0.08rem;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .summary-status {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.25rem;
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .summary-status i {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0.5rem color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .summary-copy { padding: 0.95rem 0.1rem 1rem; }
+
+  .summary-copy :global(p) {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  .summary-copy :global(p:first-child) {
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  .summary-copy :global(p + p) { margin-top: 0.7rem; }
+
+  .responsibility-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1.5rem minmax(0, 1.25fr) 1.5rem minmax(0, 1fr);
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+  }
+
+  .responsibility-node {
+    display: grid;
+    min-width: 0;
+    gap: 0.05rem;
+    text-align: center;
+  }
+
+  .responsibility-node small,
+  .responsibility-node span,
+  .responsibility-node strong { font-family: var(--font-mono); }
+
+  .responsibility-node small {
+    color: var(--text-fainter);
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
+  }
+
+  .responsibility-node strong {
+    color: var(--text);
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+
+  .responsibility-node span {
+    color: var(--text-fainter);
+    font-size: 0.58rem;
+    line-height: 1.3;
+  }
+
+  .node-core strong { color: var(--accent); }
+
+  .summary-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.7rem;
+    margin-top: 0.85rem;
+    padding: 0.85rem 0.2rem 0.1rem;
+    border-top: 1px solid var(--border-lit);
+    font-family: var(--font-mono);
+  }
+
+  .github-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    color: var(--accent);
+    font-size: 1.2rem;
+  }
+
+  .summary-links a {
+    color: var(--accent-hover);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    text-underline-offset: 0.2em;
+  }
+
+  .summary-links a:hover,
+  .summary-links a:focus-visible {
+    color: var(--text);
+    text-decoration-color: var(--accent);
+  }
+
+  .summary-links a span { font-size: 0.75rem; }
+  .link-divider { color: var(--text-fainter); font-size: 0.75rem; }
+
+  .map-connector {
+    display: flex;
+    align-items: center;
+    color: var(--accent);
+  }
+
+  .map-connector::after {
+    content: "›";
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1;
+  }
+
+  .map-connector i {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-lit), var(--accent));
+  }
+
+  @media (max-width: 34rem) {
+    .council-summary { padding: 0.85rem; }
+    .summary-header { display: block; }
+    .summary-status { margin-top: 0.45rem; }
+
+    .responsibility-map {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
+    }
+
+    .responsibility-node { padding: 0.35rem 0; }
+
+    .map-connector {
+      height: 0.65rem;
+      justify-content: center;
+    }
+
+    .map-connector::after { content: "⌄"; }
+    .map-connector i { display: none; }
+  }
+</style>

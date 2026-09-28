@@ -1,0 +1,600 @@
+<div class="review-flow-wrapper">
+<figure class="review-flow" aria-labelledby="pr-review-flow-title" aria-describedby="pr-review-flow-description">
+  <div class="flow-header">
+    <div>
+      <p class="flow-kicker">PR COUNCIL · CHECKPOINTED LANGGRAPH</p>
+      <h2 id="pr-review-flow-title">One review, many independent reviewers</h2>
+    </div>
+    <div class="flow-status" aria-hidden="true">
+      <span class="status-light"></span>
+      DURABLE OPERATION
+    </div>
+  </div>
+
+  <p id="pr-review-flow-description" class="sr-only">
+    A pull request is pinned to an immutable revision, reviewed in parallel by quality and security models,
+    deliberated by disposition, and aggregated into one reconciled result. An exact preview is then held at a
+    caller-controlled commit boundary before revalidation and publication.
+  </p>
+
+  <div class="flow-pipeline">
+    <div class="flow-rail" aria-hidden="true"></div>
+
+    <section class="flow-stage stage-prepare" aria-labelledby="flow-prepare-title">
+      <span class="stage-marker" aria-hidden="true">01</span>
+      <div class="stage-card">
+        <div class="stage-heading">
+          <h3 id="flow-prepare-title">Pin and prepare the source</h3>
+          <span>deterministic</span>
+        </div>
+        <p>Resolve context, prepare a managed worktree or validate a local checkout, and bind the operation to exact base and head commits.</p>
+        <div class="revision-strip" role="group" aria-label="The review is bound to exact base and head revisions">
+          <code>base_sha</code><span aria-hidden="true">···</span><code>head_sha</code><b>read-only source</b>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-stage stage-review" aria-labelledby="flow-review-title">
+      <span class="stage-marker" aria-hidden="true">02</span>
+      <div class="stage-card">
+        <div class="stage-heading">
+          <h3 id="flow-review-title">Review in parallel</h3>
+          <span>multi-model matrix</span>
+        </div>
+        <p>Independent model families inspect the same pinned source through bounded, read-only sandboxes.</p>
+        <div class="parallel-grid">
+          <div class="review-lane quality-lane">
+            <div class="lane-heading"><span class="lane-shape" aria-hidden="true"></span>QUALITY</div>
+            <div class="model-row" role="group" aria-label="Multiple quality reviewer models">
+              <span>model 1</span><span>model 2</span><span>… n</span>
+            </div>
+            <div class="iteration-loop"><i aria-hidden="true">↻</i> refine findings across bounded passes</div>
+          </div>
+          <div class="review-lane security-lane">
+            <div class="lane-heading"><span class="lane-shape" aria-hidden="true"></span>SECURITY</div>
+            <div class="model-row" role="group" aria-label="Multiple security reviewer models">
+              <span>model 1</span><span>model 2</span><span>… n</span>
+            </div>
+            <div class="iteration-loop"><i aria-hidden="true">↻</i> refine findings across bounded passes</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-stage stage-deliberate" aria-labelledby="flow-deliberate-title">
+      <span class="stage-marker" aria-hidden="true">03</span>
+      <div class="stage-card">
+        <div class="stage-heading">
+          <h3 id="flow-deliberate-title">Deliberate by disposition</h3>
+          <span>closed set</span>
+        </div>
+        <p>Each council must decide the exact findings its reviewers produced: retain or reject, never invent.</p>
+        <div class="decision-grid" role="group" aria-label="Quality and security deliberations happen in parallel">
+          <div><span class="decision-input">quality findings</span><b aria-hidden="true">→</b><span class="decision-output">quality verdicts</span></div>
+          <div><span class="decision-input">security findings</span><b aria-hidden="true">→</b><span class="decision-output">security verdicts</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-stage stage-aggregate" aria-labelledby="flow-aggregate-title">
+      <span class="stage-marker" aria-hidden="true">04</span>
+      <div class="stage-card">
+        <div class="stage-heading">
+          <h3 id="flow-aggregate-title">Aggregate the signal</h3>
+          <span>one reconciled result</span>
+        </div>
+        <p>Merge overlap, preserve source-finding IDs, carry forward the strongest severity, and produce one reconciled review.</p>
+        <div class="funnel" aria-hidden="true">
+          <span>Q</span><span>S</span><i></i><strong>REVIEW</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-stage stage-approve" aria-labelledby="flow-approve-title">
+      <span class="stage-marker" aria-hidden="true">05</span>
+      <div class="stage-card gate-card">
+        <div class="stage-heading">
+          <h3 id="flow-approve-title">Preview, then wait</h3>
+          <span>caller-controlled gate</span>
+        </div>
+        <p>Build the exact payload and hash. The caller can commit matching values or cancel; cancellation closes once publication begins.</p>
+        <div class="approval-row">
+          <div><small>BOUND TO</small><code>revision + payload hash</code></div>
+          <span class="wait-state"><i></i> CALLER: COMMIT / CANCEL</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-stage stage-publish" aria-labelledby="flow-publish-title">
+      <span class="stage-marker" aria-hidden="true">06</span>
+      <div class="stage-card">
+        <div class="stage-heading">
+          <h3 id="flow-publish-title">Revalidate and publish</h3>
+          <span>replay-safe</span>
+        </div>
+        <p>Recheck the PR revision, payload, identity, and duplicate state at the side-effect boundary.</p>
+        <div class="terminal-row">
+          <span class="terminal-success">INLINE COMMENTS + COMMENT SUMMARY</span>
+          <span class="terminal-muted">or stale → no publish</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <figcaption>Progress is checkpointed throughout. The caller can poll, preview, commit, or cancel, and the runtime can recover after a restart.</figcaption>
+</figure>
+</div>
+
+<style>
+  .review-flow-wrapper {
+    margin: 2.75rem 0;
+  }
+
+  .review-flow {
+    --flow-cycle: 18s;
+    margin: 0;
+    padding: 1.1rem;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(color-mix(in srgb, var(--accent) 2.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 2.5%, transparent) 1px, transparent 1px),
+      var(--bg-raised);
+    background-size: 24px 24px;
+    box-shadow: inset 0 0 4rem rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
+
+  .flow-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.15rem 0.2rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .flow-kicker,
+  .flow-header h2,
+  .flow-stage h3,
+  .flow-stage p,
+  .review-flow figcaption {
+    margin: 0;
+  }
+
+  .flow-kicker {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.075em;
+  }
+
+  .flow-header h2 {
+    margin-top: 0.2rem;
+    color: var(--text);
+    font-size: clamp(1.05rem, 3vw, 1.35rem);
+    line-height: 1.3;
+  }
+
+  .flow-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: none;
+    padding-top: 0.2rem;
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .status-light {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0.55rem color-mix(in srgb, var(--accent) 60%, transparent);
+    animation: flow-status-pulse 1.8s ease-in-out infinite;
+  }
+
+  .flow-pipeline {
+    position: relative;
+    display: grid;
+    gap: 0.85rem;
+    padding: 1.1rem 0 0.25rem;
+  }
+
+  .flow-rail {
+    position: absolute;
+    z-index: 0;
+    top: 1.25rem;
+    bottom: 1.4rem;
+    left: 1.4rem;
+    width: 1px;
+    background: var(--border-lit);
+  }
+
+  .flow-stage {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: start;
+  }
+
+  .stage-marker {
+    display: grid;
+    place-items: center;
+    width: 2.05rem;
+    height: 2.05rem;
+    margin: 0.7rem auto 0;
+    border: 1px solid var(--border-lit);
+    border-radius: 50%;
+    background: var(--bg-raised);
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    animation: flow-marker-focus var(--flow-cycle) ease-in-out infinite;
+  }
+
+  .stage-card {
+    position: relative;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    box-shadow: inset 3px 0 0 transparent;
+    animation: flow-card-focus var(--flow-cycle) ease-in-out infinite;
+  }
+
+  .stage-review .stage-marker,
+  .stage-review .stage-card { animation-delay: 3s; }
+  .stage-deliberate .stage-marker,
+  .stage-deliberate .stage-card { animation-delay: 6s; }
+  .stage-aggregate .stage-marker,
+  .stage-aggregate .stage-card { animation-delay: 9s; }
+  .stage-approve .stage-marker,
+  .stage-approve .stage-card { animation-delay: 12s; }
+  .stage-publish .stage-marker,
+  .stage-publish .stage-card { animation-delay: 15s; }
+
+  .stage-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .stage-heading h3 {
+    color: var(--text);
+    font-size: 0.98rem;
+    line-height: 1.35;
+  }
+
+  .stage-heading > span {
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    text-align: right;
+    text-transform: uppercase;
+  }
+
+  .flow-stage p {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .revision-strip,
+  .approval-row,
+  .terminal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-top: 0.7rem;
+  }
+
+  .revision-strip code,
+  .approval-row code {
+    color: var(--accent);
+    font-size: 0.72rem;
+  }
+
+  .revision-strip > span { color: var(--text-fainter); }
+
+  .revision-strip b {
+    margin-left: auto;
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .parallel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+  }
+
+  .review-lane {
+    padding: 0.65rem;
+    border-left: 2px solid var(--border-lit);
+    background: var(--bg-inset);
+  }
+
+  .lane-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+  }
+
+  .lane-shape {
+    width: 0.45rem;
+    height: 0.45rem;
+    border: 1px solid var(--accent);
+    transform: rotate(45deg);
+  }
+
+  .security-lane .lane-shape { border-radius: 50%; transform: none; }
+
+  .model-row {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .model-row span {
+    flex: 1;
+    min-width: 0;
+    padding: 0.24rem 0.3rem;
+    border: 1px solid var(--border-lit);
+    border-radius: 2px;
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-align: center;
+  }
+
+  .stage-review .model-row span {
+    animation: model-inspect 3s ease-in-out infinite;
+  }
+
+  .stage-review .model-row span:nth-child(2) { animation-delay: 0.5s; }
+  .stage-review .model-row span:nth-child(3) { animation-delay: 1s; }
+
+  .iteration-loop {
+    margin-top: 0.45rem;
+    color: var(--text-fainter);
+    font-size: 0.67rem;
+    line-height: 1.35;
+  }
+
+  .iteration-loop i {
+    display: inline-block;
+    color: var(--accent);
+    font-style: normal;
+    animation: iteration-spin 3s linear infinite;
+  }
+
+  .decision-grid {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+  }
+
+  .decision-grid > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .decision-grid span {
+    padding: 0.28rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+  }
+
+  .decision-input {
+    border: 1px solid var(--border);
+    color: var(--text-fainter);
+  }
+
+  .decision-grid b {
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .decision-output {
+    background: var(--accent-muted);
+    color: var(--text-dim);
+  }
+
+  .funnel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+  }
+
+  .funnel span {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 1px solid var(--border-lit);
+    border-radius: 50%;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .funnel i {
+    width: 3rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-lit), var(--accent));
+  }
+
+  .funnel strong {
+    padding: 0.32rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+    background: var(--accent-muted);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .gate-card { border-color: color-mix(in srgb, var(--status-warn) 35%, transparent); }
+
+  .approval-row { justify-content: space-between; }
+
+  .approval-row > div {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .approval-row small {
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+  }
+
+  .wait-state {
+    display: flex;
+    align-items: center;
+    gap: 0.38rem;
+    color: var(--status-warn);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+  }
+
+  .wait-state i {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: wait-blink 1.15s steps(1, end) infinite;
+  }
+
+  .terminal-row span {
+    padding: 0.3rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.03em;
+  }
+
+  .terminal-success {
+    background: color-mix(in srgb, var(--status-success) 12%, transparent);
+    color: var(--status-success);
+  }
+
+  .terminal-muted {
+    color: var(--text-fainter);
+    border: 1px solid var(--border);
+  }
+
+  .review-flow figcaption {
+    padding: 0.85rem 0.2rem 0.05rem 3.45rem;
+    color: var(--text-fainter);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes flow-card-focus {
+    0%, 12% {
+      border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+      box-shadow: inset 3px 0 0 var(--accent), 0 0 1.25rem color-mix(in srgb, var(--accent) 7%, transparent);
+      transform: translateX(2px);
+    }
+    17%, 100% {
+      border-color: var(--border);
+      box-shadow: inset 3px 0 0 transparent;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes flow-marker-focus {
+    0%, 12% {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 0.75rem color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    17%, 100% {
+      border-color: var(--border-lit);
+      color: var(--text-fainter);
+      box-shadow: none;
+    }
+  }
+
+  @keyframes flow-status-pulse {
+    50% { opacity: 0.35; box-shadow: 0 0 0.2rem color-mix(in srgb, var(--accent) 30%, transparent); }
+  }
+
+  @keyframes model-inspect {
+    0%, 18% { border-color: var(--accent); color: var(--text); }
+    26%, 100% { border-color: var(--border-lit); color: var(--text-dim); }
+  }
+
+  @keyframes iteration-spin { to { transform: rotate(360deg); } }
+  @keyframes wait-blink { 50% { opacity: 0.2; } }
+
+  @media (max-width: 560px) {
+    .review-flow-wrapper { margin-inline: -0.25rem; }
+    .review-flow { padding: 0.85rem; }
+    .flow-header { display: block; }
+    .flow-status { margin-top: 0.55rem; }
+    .flow-rail { left: 1rem; }
+    .flow-stage { grid-template-columns: 2rem minmax(0, 1fr); gap: 0.45rem; }
+    .stage-marker { width: 1.7rem; height: 1.7rem; font-size: 0.6rem; }
+    .stage-card { padding: 0.7rem; }
+    .stage-heading { display: block; }
+    .stage-heading > span { display: block; margin-top: 0.1rem; text-align: left; }
+    .parallel-grid { grid-template-columns: 1fr; }
+    .revision-strip b { width: 100%; margin-left: 0; }
+    .approval-row { align-items: flex-start; }
+    .review-flow figcaption { padding-left: 2.45rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-light,
+    .stage-marker,
+    .stage-card,
+    .stage-review .model-row span,
+    .iteration-loop i,
+    .wait-state i {
+      animation: none;
+    }
+  }
+</style>

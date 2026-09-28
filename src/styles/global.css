@@ -1176,8 +1176,7 @@ main {
 .agentic-hub-nav a { color: var(--text-dim); }
 .agentic-hub-nav a:hover { color: var(--accent-hover); }
 
-.agentic-read-first,
-.agentic-project {
+.agentic-read-first {
   position: relative;
   display: grid;
   grid-template-columns: 8.5rem minmax(0, 1fr);
@@ -1194,8 +1193,7 @@ main {
     inset 0 0 0 1px rgba(98, 255, 198, 0.018);
 }
 
-.agentic-read-first::before,
-.agentic-project::before {
+.agentic-read-first::before {
   content: '';
   position: absolute;
   top: -1px;
@@ -1358,13 +1356,65 @@ main {
   font-size: 0.98rem;
 }
 
-.agentic-project {
-  display: block;
-  margin-top: 3.75rem;
+.agentic-implementations { margin-top: 3.75rem; }
+.agentic-implementations > h2 { margin: 0.55rem 0 1rem; }
+
+.agentic-implementation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
-.agentic-project h2 { margin: 0.55rem 0; }
-.agentic-project p { color: var(--text-dim); }
+.agentic-implementation-card {
+  --project-accent: var(--accent);
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.2rem;
+  border: 1px solid var(--border-lit);
+  border-top: 3px solid var(--project-accent);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--project-accent) 9%, transparent), transparent 62%),
+    var(--bg-raised);
+}
+
+.agentic-implementation-card-switchplane { --project-accent: var(--status-warn); }
+
+.agentic-implementation-kind {
+  margin: 0 0 0.55rem;
+  color: var(--project-accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+}
+
+.agentic-implementation-card h3 { margin: 0 0 0.5rem; }
+.agentic-implementation-card > p:not(.agentic-implementation-kind) {
+  margin: 0 0 1.1rem;
+  color: var(--text-dim);
+}
+
+.agentic-implementation-card .agentic-project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.agentic-implementation-card .agentic-project-link > svg {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  color: var(--project-accent);
+}
+
+.agentic-implementation-card .agentic-project-link .signal-tail {
+  color: var(--project-accent);
+}
 
 .agentic-series-link {
   display: flex;
@@ -1729,11 +1779,12 @@ main {
 
   .agentic-research-grid { grid-template-columns: minmax(0, 1fr); }
 
-  .agentic-read-first,
-  .agentic-project {
+  .agentic-read-first {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.65rem;
   }
+
+  .agentic-implementation-grid { grid-template-columns: minmax(0, 1fr); }
 
   .agentic-series-link {
     align-items: flex-start;

@@ -1,0 +1,326 @@
+---
+title: 'The Harness Within the Harness: PR Council, a Runnable Experiment in Agentic Engineering'
+description: >-
+    Taking the ideas from the series and turning them into a runnable experiment in agentic engineering.
+pubDate: 2026-09-28
+tags: ['ai-engineering', 'agentic-workflows', 'mcp', 'software-architecture', 'code-review']
+draft: false
+heroImage: ../../assets/posts/pr-council-mcp-a-shared-playground-for-agentic-systems.png
+heroImageAlt: 'Two engineers studying a compact mechanical review rig as multiple instruments inspect a shared code module'
+---
+
+import PrCouncilSummary from '../../components/PrCouncilSummary.astro';
+import PrCouncilCast from '../../components/PrCouncilCast.astro';
+import PrReviewFlow from '../../components/PrReviewFlow.astro';
+import Callout from '../../components/Callout.astro';
+import { postUrl } from '../../utils';
+
+<p><em>Part 3 in a series about building agentic workflows that work across coding harnesses: <a href={postUrl('the-harness-within-the-harness')}>the portable application boundary</a>, <a href={postUrl('context-as-a-control-surface')}>context as a control surface</a>, and <a href={postUrl('pr-council-a-runnable-experiment-in-agentic-engineering')}>PR Council as a runnable experiment</a>. This part walks through a working PR review system built around those ideas.</em></p>
+
+<PrCouncilSummary>
+I built a PR review system mostly as an excuse to experiment with
+agentic architecture. Multiple independent models review the same change, 
+deliberate and produce one aggregated result inside a durable, deterministic workflow. 
+
+MCP provides the operational seam, LangGraph owns orchestration and state, 
+agents are only used when judgement is actually required.
+</PrCouncilSummary>
+
+<PrCouncilCast />
+
+PR reviews have become my "hello world" of agentic systems.
+
+Don't stop reading there. As the kids would say (or maybe I'm already behind the times, I
+can't keep up), **let me cook.**
+
+## Why PR reviews
+
+### The mundane
+If you write code in nearly any capacity, chances are you know what a PR review
+process entails. Exact processes will vary by individual, team or company but
+the high level process is the same. Someone generates code, creates a PR and you
+review it. You look for functional defects, sometimes critique stylistic
+shortcomings, but the biggest questions are typically:
+
+> "Is this the right approach architecturally"
+
+There's also another one I've been asking more often in the later parts
+of my career: 
+
+> "What if we just didn't"?
+
+In any event, they're typically structurally similar: The PR is submitted,
+comments are left and the change is iterated on until everyone's happy and the
+change has been merged. Neat. On the same page so far.
+
+### The interesting bits
+
+Even though the high level structure is almost always similar, the nuances
+around how each team conducts their reviews is where things get interesting.
+
+A non-exhaustive list of examples around that nuance:
+
+- How many reviewers are needed for a review? Do multiple people need to sign
+  off on it before we're content?
+- Do we need domain specialist reviews, or different dispositions? Does the team
+  have a quality champion? A security champion?
+- How many passes does someone need on a PR before they feel like they've
+  uncovered all potential issues?
+- Is reading the diff enough or do we need to follow symbols to understand side
+  effects at a lower level?
+
+Applying and experimenting with these nuances in an agentic workflow is
+sufficiently complex to explore many different aspects of working with agents.
+
+<PrReviewFlow />
+
+The LLM isn't in the driver's seat for this workflow. The overall topology is
+deterministic. Models are used in nodes when judgement is actually required.
+More details on that in ["Who owns the control loop?" section of The Division of
+the Local
+Harness](https://demianbrecht.com/posts/the-division-of-the-local-harnesses/#who-owns-the-control-loop).
+**This works equally well in any harness that supports MCP! No need to rearchitect
+your skills or plugins.**
+
+## Prior art
+
+There is a healthy amount of existing research on the subject of AI-driven PR
+reviews. Elements of the design have borrowed from some of these over
+iterations. A few papers that influenced different parts of the design are:
+
+- [SWR-Bench: Assessing LLM Performance in Real-World Code Review Comment
+  Generation](https://arxiv.org/abs/2509.01494): Zhengran Zeng, Ruikai Shi, 
+  Keke Han, Yixin Li, Kaicheng Sun, Yidong Wang, Zhuohao Yu, Rui Xie, Wei Ye,
+  Shikun Zhang
+  - The research here inspired me to implement multiple passes for each reviewer
+    against a given PR.
+- [Philosophical Dispositions as Behavioral Constraints for AI-Assisted Code
+  Review: An Empirical Study](https://arxiv.org/abs/2605.23108): Kaushal Bansal
+  - I haven't experimented directly with philosophical dispositions, but it
+    reinforced having more than a single reviewer class (current implementation
+    has quality and security dispositions)
+- [Cross-Model LLM Code Review: Should you use Claude to review Codex or vice
+  versa?](https://arxiv.org/abs/2607.21656): Zuodong Xiang, Yike Zhang, 
+  YueMing Zhang, Hailu Xu
+  - Inspired my earliest agentic experiments with using multiple model families
+    for reviews.
+
+## The toys in the playground 
+
+These are the levers I've been experimenting with and have become sufficiently excited
+about them to open source. My hope is that I can learn from those smarter than
+I and maybe as a result, produce something that is even better than its current
+shape!
+
+### Infrastructure
+Like to experiment with the platform? The nuts and bolts of how things work?
+This may be for you!
+
+#### MCP as a seam for agentic systems
+I've previously [written about
+this](https://demianbrecht.com/posts/the-harness-within-the-harness/). In a
+nutshell, the idea is that the coding harness (Claude, Codex, etc) provides a
+conversational interface. It pulls all of your data together as needed for a
+given MCP tool. Then calls the tool with the required parameters. Normal MCP
+function.
+
+Where this approach differs is that MCP tools themselves can be on a spectrum of
+entirely agentic and fully deterministic. For short lived tasks, they use normal
+MCP tool signatures. For longer lived, durable tasks, I have an async interface
+defined that allows the conversational harness to kick off a job and
+intermittently check back while you continue working on other things. The
+process is implemented using LangGraph with durable SQLite checkpoints, which
+means you can pick up the process should you lose your coding harness session
+for any reason.
+
+Yes, [Tasks are now a part of the MCP
+protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/tasks),
+but I didn't actually find out about that until after I'd already implemented
+this. Tasks are also not implemented in frontier harnesses as of this writing,
+so this approach is a sound temporary step. I expect little loss in the
+translation, but I've been wrong before.
+
+#### Zero deployment
+You get to experiment with production-like agentic systems *without actually
+having to deploy anything*. It all runs within a Python virtual environment
+(Python 3.12+ and uv are the sole prerequisites) on your local system.
+
+#### Sandboxing
+If you ask an LLM to build tools for you that can be provided to an LLM for specific
+functions, it'll typically start writing bespoke code for each tool it hands to
+the LLM. The reasoning is understandable: Add software constraints around what the
+model has access to. Only allow what you've explicitly granted it. The
+*downside* in many cases (of which PR reviews are one) is that models were not
+trained on those tools. They'll try to use typical system utilities that they
+were trained on. When they find they can't access them, they'll fall back to
+your tools. Then, depending on how well they're documented, they may continue to
+thrash simply because they're not native.
+
+I chose a more permissive strategy, allowing tools by security policy
+(read/write by directory, ipc and network). Each agent gets the security policy
+in code and the model can only execute what it has kernel-level permissions for.
+It's not granular enough to claim fantastic security, but like the rest of the
+project, it's an experimental start at constraining what the model can access.
+
+<Callout type="info">
+The Sandbox implementation lives in
+[localmcplib](https://github.com/salesforce-misc/localmcplib), not PR Council
+itself.
+</Callout>
+
+#### Bounded tool calls and limits
+A few numbers to play with here. Number of tool calls each reviewer gets, output
+tokens, how many models per disposition, etc.
+
+These aren't just cost controls. They constrain how much autonomy any individual
+reviewer gets before control returns to the workflow. Tool-call budgets, pass 
+counts, output limits and council size give us explicit knobs for cost, latency
+and agent authority.
+
+### Product
+This is where things get interesting and there are *many* levers to experiment
+with. There are a few others, but the ones I find most interesting are:
+
+#### Multi-agent orchestration and context isolation
+Depending on config, there are multiple review models, potentially from
+different families and dispositions (i.e. security and quality). Each holds
+independent context windows. This is deliberate: I want each agent to come to
+its own conclusion without being swayed by another agent's decisions.
+
+Once review passes are complete, there's a
+deliberation step that will review the output with a keen eye for false
+positives. 
+
+Review state is persisted such that a subsequent PR review run is
+treated much like a human-driven process: Ensure review feedback has been
+addressed and that new issues are not encountered with changes made.
+
+#### Multiple dispositions
+The implementation as of this writing has security and quality-focused
+dispositions per review agent. Adding to the mix for experimental purposes is
+relatively simple following existing patterns.
+
+
+### Observability
+How can you understand the changes to your agentic workflow if you have no way
+to observe them, other than gut feel after an end to end run? 
+
+It's pretty tough.
+
+PR Council is thoroughly instrumented for LangFuse. You can run LangFuse locally
+or to a managed instance. Up to you, either is configurable. Using LangFuse
+gives you trace-level inspection of the agentic workflow.
+
+See each individual tool call in real time. Investigate the inputs and outputs
+(payloads have to be explicitly enabled through config). See how your changes,
+be they to a prompt, tool or sandbox policies impact the live system. Not only
+in the result, but each step along the way. I found watching traces somewhat
+mind blowing my first time through. I wouldn't develop an agentic system without
+them anymore.
+
+## Take it for a spin!
+The prerequisites for PR Council are Python 3.12+, `uv`, and `gh`. Until Linux
+sandbox implementation is complete, it's also constrained to macOS (high
+priority item, Linux support coming soon!).
+
+```bash
+gh auth login
+gh auth status
+```
+
+Create `~/.config/localmcp/localmcp.toml` and add the required config elements:
+
+```toml
+schema_version = 1
+
+[llm]
+backend = "native"
+
+[secrets.openai_api_key]
+env_vars = ["OPENAI_API_KEY"]
+
+[secrets.anthropic_api_key]
+env_vars = ["ANTHROPIC_API_KEY"]
+```
+
+By default, PR Council will run using a combination of Anthropic and OpenAI
+models. If you need to constrain it to a single family, you can set the
+following config block as needed for your setup:
+
+```toml
+[server.pr-council-mcp.pr_review.models]
+quality = ["claude-opus-4-8"]
+security = ["claude-opus-4-8"]
+deliberation = "claude-opus-4-8"
+aggregation = "claude-haiku-4-5-20251001"
+```
+
+
+Set the secrets for the configuration you have. Either by environment variables:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+export OPENAI_API_KEY="sk-..."
+```
+
+Or through OS keyring service:
+
+```bash
+security add-generic-password -s localmcp -a anthropic_api_key -w
+security add-generic-password -s localmcp -a openai_api_key -w
+```
+
+Install the package on demand from public PyPI in your MCP client configuration.
+
+### Claude Code
+
+Add `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "pr-council-mcp": {
+      "command": "uvx",
+      "args": ["--from", "pr-council-mcp", "pr-council-mcp"]
+    }
+  }
+}
+```
+
+## Current limitations: halp!
+
+### Evals? What evals?!
+Exactly. I haven't gotten to building an eval suite yet. If you're keen on
+providing numbers around experiments, this may be your jam. As illustrated in
+the prior art section, my approach borrows elements from existing research, but
+I have not yet found research using the synthesis of the holistic PR Council
+approach (if you're aware of any, please let me know!).
+
+There are *many* levers to experiment with and a number of vectors to evaluate
+outputs against, but the ones that people likely care about the most are quality
+and cost.
+
+### Sandboxing: Currently macOS-only
+I've been working on this as part of my day job. As we run Macs, that was my
+primary focus. Absolutely want a Linux implementation using bubblewrap or
+similar, just haven't had time. Run on Linux? I would love the help!
+
+### Sandboxed tools: Per-agent registry
+As-is, the sandbox is a great start at constraining what models can access. That
+doesn't mean that it can't get better! My rough thought is an allow or deny list
+that's fed into an agent along with the access policy. Individual tool calls can
+be compared against the allow or deny list prior to being executed.
+
+Have another idea? Throw it up in the issue tracker! This is also an early stage
+experimental project, so there are going to be a number of edges to be smoothed
+out.
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../components/Callout.astro';
+    import Terminal from '../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}

@@ -22,13 +22,11 @@ const post = (
 
 const series = (
   id: string,
-  pubDate: string,
   posts: string[],
 ): SeriesMetadata => ({
   id,
   title: id,
   description: `${id} description`,
-  pubDate: new Date(pubDate),
   posts,
 });
 
@@ -40,7 +38,6 @@ describe('buildTimeline', () => {
     const oldest = post('oldest', '2017-01-01');
     const innerSourcing = series(
       'inner-sourcing',
-      '2020-04-10',
       ['inner-sourcing/first', 'inner-sourcing/second'],
     );
 
@@ -55,7 +52,7 @@ describe('buildTimeline', () => {
           { post: first, part: 1 },
           { post: second, part: 2 },
         ],
-        pubDate: innerSourcing.pubDate,
+        pubDate: second.data.pubDate,
       },
       { type: 'post', post: oldest, pubDate: oldest.data.pubDate },
     ]);
@@ -67,7 +64,6 @@ describe('buildTimeline', () => {
     const third = post('ordered-series/third', '2026-01-02');
     const metadata = series(
       'ordered-series',
-      '2026-01-04',
       [
         'ordered-series/second',
         'ordered-series/third',
@@ -93,7 +89,7 @@ describe('buildTimeline', () => {
 
     const timeline = buildTimeline(
       [member, standalone],
-      [series('one-series', '2026-07-01', ['one-series/member'])],
+      [series('one-series', ['one-series/member'])],
     );
 
     expect(timeline).toHaveLength(2);
@@ -109,8 +105,8 @@ describe('buildTimeline', () => {
       buildTimeline(
         [shared],
         [
-          series('first-series', '2026-03-01', ['shared-post']),
-          series('second-series', '2026-02-01', ['shared-post']),
+          series('first-series', ['shared-post']),
+          series('second-series', ['shared-post']),
         ],
       ),
     ).toThrow(/shared-post.*first-series.*second-series/i);
@@ -122,7 +118,7 @@ describe('buildTimeline', () => {
     expect(() =>
       buildTimeline(
         [repeated],
-        [series('duplicate-series', '2026-02-01', ['repeated-post', 'repeated-post'])],
+        [series('duplicate-series', ['repeated-post', 'repeated-post'])],
       ),
     ).toThrow(/duplicate.*repeated-post.*duplicate-series/i);
   });
@@ -139,7 +135,6 @@ describe('buildTimeline', () => {
       [
         series(
           'partially-visible',
-          '2026-01-04',
           ['partially-visible/hidden', 'partially-visible/visible'],
         ),
       ],
@@ -150,7 +145,7 @@ describe('buildTimeline', () => {
         type: 'series',
         series: expect.objectContaining({ id: 'partially-visible' }),
         members: [{ post: visibleMember, part: 2 }],
-        pubDate: new Date('2026-01-04'),
+        pubDate: visibleMember.data.pubDate,
       },
       { type: 'post', post: draft, pubDate: draft.data.pubDate },
     ]);
@@ -163,14 +158,14 @@ describe('buildTimeline', () => {
     const draftMember = post('draft-series/member', '2026-01-01', {
       draft: true,
     });
-    const metadata = series('draft-series', '2026-01-02', [draftMember.id]);
+    const metadata = series('draft-series', [draftMember.id]);
 
     expect(buildTimeline([draftMember], [metadata])).toEqual([
       {
         type: 'series',
         series: metadata,
         members: [{ post: draftMember, part: 1 }],
-        pubDate: metadata.pubDate,
+        pubDate: draftMember.data.pubDate,
       },
     ]);
   });
@@ -184,7 +179,6 @@ describe('buildTimeline', () => {
       [
         series(
           'partially-visible',
-          '2026-01-04',
           ['partially-visible/hidden', 'partially-visible/visible'],
         ),
       ],
@@ -195,7 +189,7 @@ describe('buildTimeline', () => {
         type: 'series',
         series: expect.objectContaining({ id: 'partially-visible' }),
         members: [{ post: visibleMember, part: 2 }],
-        pubDate: new Date('2026-01-04'),
+        pubDate: visibleMember.data.pubDate,
       },
       { type: 'post', post: standalone, pubDate: standalone.data.pubDate },
     ]);
@@ -207,7 +201,7 @@ describe('buildTimeline', () => {
   it('preserves declared part numbers and total when the middle member is absent', () => {
     const first = post('partial/first', '2026-01-01');
     const third = post('partial/third', '2026-01-03');
-    const metadata = series('partial', '2026-01-04', [
+    const metadata = series('partial', [
       'partial/first',
       'partial/hidden',
       'partial/third',
@@ -221,7 +215,7 @@ describe('buildTimeline', () => {
           { post: first, part: 1 },
           { post: third, part: 3 },
         ],
-        pubDate: metadata.pubDate,
+        pubDate: third.data.pubDate,
       },
     ]);
   });
@@ -231,7 +225,7 @@ describe('buildTimeline', () => {
     const second = post('ordered/second', '2026-01-01');
     const third = post('ordered/third', '2026-01-01');
     const standalone = post('aaa-standalone', '2026-01-01');
-    const metadata = series('ordered', '2026-01-01', [
+    const metadata = series('ordered', [
       first.id,
       second.id,
       third.id,
