@@ -10,7 +10,7 @@ import { url as href } from '../utils';
 import { SOCIAL_LINKS } from '../consts';
 import PageHeading from '../components/PageHeading.astro';
 import SystemLabel from '../components/SystemLabel.astro';
-import retroPortrait from '../assets/me-retro.png';
+import portrait from '../assets/me-cyber.webp';
 
 <div class="wrap">
 
@@ -22,11 +22,11 @@ import retroPortrait from '../assets/me-retro.png';
 
 <figure class="about-portrait">
   <Image
-    src={retroPortrait}
-    alt="Portrait of Demian Brecht framed in a retro CRT display against a neon cityscape."
-    widths={[320, 480, 640]}
+    src={portrait}
+    alt="Portrait of Demian Brecht in a rain-soaked jacket on a neon-lit city street at night, framed by a camera HUD."
+    widths={[320, 480, 640, 960]}
     sizes="(max-width: 672px) min(20rem, calc(100vw - 3rem)), 15rem"
-    loading="eager"
+    priority
   />
   <figcaption>
     <span>CAM_A-1</span>
