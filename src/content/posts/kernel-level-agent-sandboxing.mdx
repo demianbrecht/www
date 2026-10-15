@@ -1,0 +1,236 @@
+---
+title: 'Kernel-level agent sandboxing'
+description: >-
+  Sandboxing local agents with macOS Seatbelt instead of containers or VMs:
+  filesystem roots, tool allow-lists, and the quirks of Xcode, Homebrew, and links.
+pubDate: 2026-10-15
+tags: ['ai-engineering', 'security', 'macos', 'python']
+draft: false
+---
+
+import Callout from '../../components/Callout.astro';
+
+# Why does my agent need a sandbox?
+
+Once you start getting into agentic systems that are decoupled from coding harnesses (i.e. using the [Harness Within the Harness](/posts/the-harness-within-the-harness/) approach), you need to be very careful about what agents have access to, *especially* when they're running directly on your local system or deployed server without a VM or docker container. Can they read files? Write to them? Run executables?
+
+If they're not carefully constrained, they can behave unexpectedly and wreak havoc. Ain't nobody got time for that.
+
+Sandboxing is a bit of functionality that I've recently added to [localmcplib](https://github.com/salesforce-misc/localmcplib) and uses kernel-level policies. This post will speak to the design decisions made and implementation hurdles that I ran into head first.
+
+<Callout type="warn">
+As of this writing, localmcplib Sandbox implementation (and derivative projects) are **macOS only**. We'll get into the whys around this further down but the SandboxProfile abstraction is there and just waiting for someone working on Linux regularly to come along and add a `bubblewrap`-based implementation!
+</Callout>
+
+## Why not use docker containers or a VM?
+Let's address the elephant in the room: Why bother with kernel-level sandboxing when containers and VMs are already well-established options? For my use case, it simply boiled down to external dependencies. I didn't want any. The nature of the set of projects that are reliant on localmcplib are local MCP servers. I didn't want users to have to install additional software in order for it to function. 
+
+# How the need manifested
+If you use LangChain or similar for agent implementations and ask an LLM to add tools to be exposed to the agent, you very well may notice that it'll start whipping off a bunch of bespoke implementations for various system operations that the agent may need.
+
+*Oh, you need to read files? Here's a `read_file` implementation.*<br/>
+*Oh, you need to write to a file? Here's a `write_file` implementation.*<br/>
+*And so on*
+
+While that's all well and good, there are two real problems with it:
+
+1. I'd venture to guess that your custom `search_files` implementation is not going to be as performant as `rg` (ripgrep). Mine sure wasn't.
+2. Models were not trained on your bespoke systems and will thrash before finding what they have access to. Sure, you can absolutely add a bunch of prose to your system prompt indicating what they have access to, but why add those constraints, especially considering the previous point?
+
+# The design
+In principle, the shift in the overall approach was relatively simple: Rather than allow-listing every tool I wanted the LLM to have access to through the agent, I wanted to provide it with the opportunity to explore and use the best tool for the job at hand. I couldn't conceivably derive every permutation of every tool available on any given system, so I decided to switch the script so to speak:
+
+*Instead of using specific tools, I decided to expose tools based on security policies, grouped by file system roots.*
+
+General policies:
+
+- File system roots can be read only or writable
+  - Child directories or individual files can be masked out (think handling `.gitignore`)
+- Outbound network access is opt-in
+- IPC access is opt-in
+
+What's really important here is that with this design, I'm no longer relying on the LLM to follow instructions about what it can and can't do. It can explore the tools available to it, but the operating system enforces the boundaries. Even if the agent decides to do something stupid, the kernel gets the final say.
+
+## Why the kernel?
+The whole point of giving an agent a shell is that it can do things I didn't think to plan for. That's also exactly why checking things in application code is a losing game. The second the agent can run `sh -c`, `python3 -c` or `find -exec`, whatever check I put in my tool wrapper is only looking at the outermost command. Now I'm parsing shell strings and hoping I never miss a quoting trick, an `xargs` or a sneaky symlink. And models are *remarkably* good at finding the path you didn't think of. Usually by accident and with the best of intentions, but still.
+
+The kernel doesn't care what the command says, only what the process actually does: what it opens, what it execs, whether it reaches for a socket. The policy is applied before the command starts, every child inherits it, and nothing inside the sandbox can loosen it. Whether the model runs `cat` directly or buries it three subshells deep in a pipeline, it hits the same wall.
+
+The catch is that the policy talks in paths and syscalls, not intent. Most of the headaches in the rest of this post come from that.
+
+# The Sandbox abstraction
+What does this look like from an implementation standpoint?
+
+Here's a bare bones example:
+``` python
+from pathlib import Path
+
+from langchain.agents import create_agent
+from localmcp.sandbox import SandboxProfile, SandboxRoot
+from localmcp.sandbox.seatbelt import sandbox_tools
+
+
+class UnlimitedBudget:
+    async def claim(self):
+        return True, None
+
+    def metadata(self, exhausted_scope=None):
+        return {}
+
+
+# Read-only view of ~/src with the default inspection tools (cat, find, grep, ...)
+profile = SandboxProfile(roots=(SandboxRoot(Path.home() / "src"),))
+
+tools = sandbox_tools(profile, budget=UnlimitedBudget())
+agent = create_agent(model, tools)
+```
+In the above, we're simply allowing read-only access to the user's `~/src` directory.
+
+Here's a more complex example, touching on the entire surface area of `SandboxProfile`s:
+``` python
+from pathlib import Path
+
+from langchain.agents import create_agent
+from localmcp.sandbox import (
+    INSPECTION_TOOLS,
+    WRITE_TOOLS,
+    RootAccess,
+    SandboxProfile,
+    SandboxRoot,
+)
+from localmcp.sandbox.seatbelt import sandbox_tools
+
+
+class CappedBudget:
+    def __init__(self, limit):
+        self.remaining = limit
+
+    async def claim(self):
+        if self.remaining <= 0:
+            return False, "run"
+        self.remaining -= 1
+        return True, None
+
+    def metadata(self, exhausted_scope=None):
+        return {"remaining": self.remaining}
+
+
+worktree = Path.home() / "src" / "project"
+
+profile = SandboxProfile(
+    roots=(
+        # First root is the working directory
+        SandboxRoot(worktree, RootAccess.READ_WRITE),
+        # Readable, but write-protected inside the writable root
+        SandboxRoot(worktree / "vendor", RootAccess.READ_ONLY),
+        # Extra read-only context outside the worktree
+        SandboxRoot(Path.home() / "src" / "docs", RootAccess.READ_ONLY),
+    ),
+    # Inaccessible to sandboxed commands (must sit inside a root, no symlinks)
+    denied_paths=(worktree / ".env", worktree / "secrets"),
+    # Outbound network is opt-in
+    network=True,
+    # Shared-memory IPC only; no sockets or platform services
+    ipc=True,
+    # Every command the agent may run besides shell builtins. Missing => error
+    tools=(*INSPECTION_TOOLS, *WRITE_TOOLS, "git", "python3"),
+    # Granted if installed, silently skipped otherwise
+    optional_tools=("rg", "jq"),
+)
+
+tools = sandbox_tools(
+    profile,
+    budget=CappedBudget(limit=50),
+    timeout_seconds=60,
+    max_output_bytes=1024 * 1024,
+)
+agent = create_agent(model, tools)
+```
+
+You have a number of options at your disposal in order to lock your system down **at the kernel level** for your agentic systems. You may notice that `tools` and `optional_tools` are separate parameters. This is to allow the author of the agent to specify the tools that they absolutely require in order for the agent to function successfully. Optional tools will only be invoked if they exist on the system. You can optionally add tool searching and inject the available tools into your system prompt if needed. That is not handled automatically by the library.
+
+# How it works
+Under the hood, this is macOS Seatbelt, driven through `sandbox-exec`. Every command the agent runs gets its own Seatbelt profile that starts from `(deny default)` and then grants exactly what the `SandboxProfile` asked for, and nothing else:
+
+- Each root is granted read access, and writable roots are granted write access too.
+- Denied paths are carved back out of those roots afterwards, and read-only roots nested in a writable root get write access denied on top of that.
+- Outbound network is a single grant, and it's all or nothing. There's no per-host filtering here. As a side effect, a profile with `network=True` also gets the system TLS config and trust store, because the system `curl` won't even start without them.
+- IPC is shared memory only. No sockets, no platform services.
+- Commands can only exec the shell and the tools you listed. Everything else fails with "Operation not permitted", including when a tool you *did* list tries to launch it.
+
+I'm sandboxing the commands that the agent executes, not the agent or MCP server process itself. Anything executed outside of this interface isn't protected by these policies.
+
+On top of the policy, each command runs with a clean environment (no inherited credentials, `HOME` pointing at an empty directory, git config neutered), a private temp directory that's thrown away afterwards, and limits on runtime, output size, open files and processes. When a command finishes or times out, everything it started gets killed. Yes, including the processes that tried to get clever with `setsid` or a double fork. A process can leave its process group but it can't leave its sandbox, so the cleanup finds them by policy rather than by parentage.
+
+You may have noticed the `budget` argument in the examples above. `sandbox_tools` wraps the sandbox up as a single `Bash` tool for the agent, and the budget is asked for permission before every call. It's how you cap the number of tool calls in a run, and when it says no, the agent gets a message telling it to wrap up instead of a stack trace. The two classes in the examples are the smallest possible implementations of that contract.
+
+# OS-level quirks and limitations due to... Reasons
+
+If we only ever needed read and write access, we'd mostly be fine (other than links, which are a whole thing I'll get to). Unfortunately, that's not all we need. Executing applications is rather important, otherwise much of this sandboxing effort was for naught. This is the part that took most of my time. As a user and outside of common security concerns, I didn't particularly care much about how applications were executed. I had little to no need to figure out how different packaging and deployment systems really worked under the hood. Each one of the below somewhat caught me by surprise any time a model wanted to use a tool that was installed in one of these manners.
+
+It was more than a mild headache and more than a few tokens were spent trying to resolve the issues as securely as possible.
+
+
+## Xcode command line tools
+macOS provides shims for many developer commands, such as `clang` and `git`. These small wrapper executables locate and run the corresponding tool from the active developer installation, selected using `xcode-select`. That installation can be Xcode or the standalone Command Line Tools package.
+
+A few things fall out of that:
+
+- The developer directory comes from `xcode-select -p`, run with a scrubbed environment. `DEVELOPER_DIR` can't point the sandbox's read grant somewhere else, and unlike `xcrun` or a shim, `xcode-select` can't trigger the "install the Command Line Tools" prompt.
+- The sandbox gets read access to that install and nothing else, and the tool's real binary is run directly from it rather than through the shim.
+- A `/usr/bin` file is identified as a shim by the libxcselect function it calls. A shim for a tool the selected install doesn't have can only fail, so it's treated as not installed rather than as a base-system command.
+- Actual base-system commands (`cat`, `ls`, and friends) need nothing more than permission to exec.
+
+## Xcode.app
+Similar to the Xcode command line tools, but particularly nasty because it interacts with more components of Xcode than just `xcode-select`. The shims inside Xcode.app read `Contents/Info.plist` and load `Contents/SharedFrameworks`, so granting `Contents/Developer` isn't enough. The sandbox grants the whole bundle read-only, plus the license record that Xcode keeps in `/Library/Preferences`.
+
+The one thing that doesn't work is the `/usr/bin` shim. Under Xcode, it runs `xcodebuild` first to check the license, and I wasn't about to grant `xcodebuild`. Tools installed by Xcode.app still work, but only through the install's own copy of the binary, which is what the sandbox runs anyway.
+
+## Homebrew
+Homebrew was the opposite problem. Rather than one big install to reason about, a formula's binary is a symlink in `/opt/homebrew/bin` that points into `Cellar/<name>/<version>`, and that binary expects to find its own libraries, and the libraries of everything it depends on, when it runs. Granting the whole Homebrew prefix would have been the easy way out, but that would also hand the agent every other formula, plus `etc`, `share` and `var`. Not great.
+
+Instead, I let Homebrew's own bookkeeping do the work. For each tool:
+
+1. Resolve the symlink in `bin` to find the formula and installed version (the keg) that it actually runs from.
+2. Read the keg's `INSTALL_RECEIPT.json`, which lists the formula's runtime dependencies.
+3. Walk those dependencies (and their dependencies) the same way, resolving each through `opt/<name>`.
+
+The sandbox is then granted read-only access to that set of kegs and nothing else. Only the resolved binary itself (and any helper programs the formula keeps in its `libexec`, like git's `git-core`) is executable. If a dependency listed in a receipt isn't installed, or a receipt can't be read, creating the sandbox fails rather than quietly granting less (or more) than it should. For `optional_tools`, it's simply skipped.
+
+Homebrew is only ever looked for at its default prefixes, and nothing is executed to find it. `HOMEBREW_PREFIX` and the caller's `PATH` are never consulted, so the environment can't be used to widen what the sandbox grants. The tradeoff is that anything installed elsewhere (`~/.cargo/bin`, for example) isn't available to the agent.
+
+## Symlinks
+Seatbelt matches on the real path a file is opened by, not the name used to get there. Access follows the target, so a link is never more powerful than what it points at:
+
+- A symlink that points outside every root can't be read, listed or written through, whether it was already there or the agent created it.
+- Roots and tools are resolved through their symlinks before any grant is written, so the grant always lands on the real directory or binary.
+- Denied paths and write-protected roots can't go through a symlink. A rule on the link's path would match nothing, so the sandbox refuses to be created instead.
+
+## Hard links
+A hard link is another name for the same file, and since Seatbelt works on paths, a rule on one name says nothing about the other.
+
+- Creating a new name for a denied or write-protected file is denied, as is renaming the directories above it.
+- A denied file, or anything under a write-protected root, that already has another link fails the sandbox at creation and before each command. Anything that can't be checked fails the same way.
+- Exec grants are literal paths, so a hard link to a tool under a new name isn't executable.
+
+# Why macOS only?
+Mostly because it's the machine I'm sitting at daily and needed to account for. Seatbelt is what it gives you for free. I do want this to be portable though, which is why `SandboxProfile` is deliberately the part that doesn't know or care about the OS. Roots, denied paths, network, IPC and tools are all described in generic terms, and the macOS backend is just what turns them into a Seatbelt policy.
+
+Everything in the last section (the shims, the Homebrew kegs, the link checks) is that backend wrestling with macOS, so none of it would come along for the ride. A Linux backend would be a whole different pile of problems. I'd probably start with `bubblewrap`, but I'll leave that one to somebody who uses Linux in their day job or just has time and beats me to it.
+
+# What this doesn't do
+It would be dishonest to call this a vault, so here's what it isn't:
+
+- **It doesn't limit how much gets written.** Nothing bounds the size of what a command writes to a writable root. A read-only profile gets no writable scratch space at all, so there's nothing to fill, but give an agent a writable root and it can fill the disk.
+- **`WRITE_TOOLS` doesn't decide what can write.** Root access does. The shell and `sed -i` can write to a writable root whether or not `cp` and friends are listed. The list is about what the agent can *run*, not about what it can *do*.
+- **A tool is as capable as the tool.** List `python3` and the agent has a Python interpreter inside the same boundaries. That's the point, but it also means every tool you add is a bigger surface to think about.
+- **Network is all or nothing.** If you opt in, the agent can reach anything the machine can.
+
+The policy is the boundary. Anything inside it is still up to you. This also doesn't prevent information from leaving through the LLM itself. Anything the agent is allowed to read can end up in tool output sent to the model provider. This is about constraining execution, not guaranteeing data confidentiality.
+
+# Wrapping up
+One thing to note is that the sandbox implementation uses `sandbox-exec` under the hood on macOS. `sandbox-exec` has apparently been deprecated for roughly 10 years, but given the number of system utilities and other apps that are still dependent on it, it's a risk I'm comfortable with for now. Because the implementation is abstracted, it can also be swapped out easily enough when another option is available.
+
+The kernel-level approach works, but it was more of a headache than I'd anticipated. After working on it, introducing it to MCP servers I've been working on and observing the LLM's interaction with the tools, I think it was the right architectural choice. It's being used in implementations that I use daily (i.e. [pr-council-mcp](https://github.com/salesforce-misc/pr-council-mcp)).
+
+Would love to hear from others about approaches they've taken to solve the same issue. Are you on Linux daily? Would love a contribution to the Sandbox implementation that runs on that OS as well.
