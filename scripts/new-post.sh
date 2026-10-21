@@ -32,7 +32,7 @@ if [[ -e "$file" ]]; then
 fi
 
 # Escape single quotes for the YAML single-quoted scalar.
-yaml_title="${title//\'/\'\'}"
+yaml_title="$(printf '%s' "$title" | sed "s/'/''/g")"
 
 cat > "$file" <<EOF
 ---
