@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="776" viewBox="0 0 800 776" role="img" aria-labelledby="title description">
+  <title id="title">Investigating a failing test</title>
+  <desc id="description">A repair request for a failing test reaches a software supervisor. The supervisor starts an LLM investigator and gives a scoped runner and isolated workspace its scope and budget. The investigator sends evidence and test requests to the runner and receives results. The investigator submits a candidate patch to software validation and required checks. Failed checks return the work to the investigator while budget remains. Passing checks produce an immutable review bundle for a human maintainer decision. An approval bound to that patch goes to a software publisher.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M1 1 9 5 1 9Z" fill="#7a8899"/>
+    </marker>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; text-anchor: middle; }
+    .title { fill: #e6e9ee; font-size: 18px; font-weight: 600; }
+    .tag { font-size: 12.5px; font-weight: 700; letter-spacing: 1.4px; }
+    .edge { fill: #a3abb8; font-size: 15px; }
+    .start { text-anchor: start; }
+    .end { text-anchor: end; }
+    .node { fill: #21262e; stroke: #3a424d; stroke-width: 1.5; }
+    .software { fill: #1b2938; stroke: #4a9eff; stroke-width: 1.7; }
+    .llm { fill: #282219; stroke: #d9a038; stroke-width: 1.7; }
+    .human { fill: #1a271f; stroke: #4fb477; stroke-width: 1.7; }
+    .software-tag { fill: #7cbaff; }
+    .llm-tag { fill: #e6b65f; }
+    .human-tag { fill: #7fd19f; }
+    .flow { fill: none; stroke: #7a8899; stroke-width: 2; stroke-linejoin: round; marker-end: url(#arrow); }
+  </style>
+
+  <rect width="800" height="776" rx="12" fill="#14171c"/>
+
+  <!-- Request and supervisor -->
+  <rect x="40" y="30" width="270" height="52" rx="10" class="node"/>
+  <text x="175" y="62" class="title">Repair request</text>
+
+  <path d="M175 82V118" class="flow"/>
+
+  <rect x="40" y="120" width="270" height="68" rx="10" class="software"/>
+  <text x="175" y="150" class="title">Supervisor</text>
+  <text x="175" y="172" class="tag software-tag">SOFTWARE</text>
+
+  <path d="M310 154H607Q625 154 625 172V240" class="flow"/>
+  <text x="467" y="143" class="edge">Scope and budget</text>
+
+  <path d="M175 188V246" class="flow"/>
+
+  <!-- Investigation loop -->
+  <rect x="40" y="248" width="270" height="68" rx="10" class="llm"/>
+  <text x="175" y="278" class="title">Investigator</text>
+  <text x="175" y="300" class="tag llm-tag">LLM</text>
+
+  <rect x="490" y="242" width="270" height="80" rx="10" class="node"/>
+  <text x="625" y="276" class="title">Scoped runner and</text>
+  <text x="625" y="300" class="title">isolated workspace</text>
+
+  <path d="M310 268H488" class="flow"/>
+  <text x="400" y="238" class="edge">Evidence and</text>
+  <text x="400" y="256" class="edge">test requests</text>
+
+  <path d="M490 296H312" class="flow"/>
+  <text x="400" y="320" class="edge">Results</text>
+
+  <!-- Candidate validation -->
+  <path d="M145 316V414" class="flow"/>
+  <text x="133" y="360" class="edge end">Candidate</text>
+  <text x="133" y="379" class="edge end">patch</text>
+
+  <path d="M205 416V318" class="flow"/>
+  <text x="217" y="360" class="edge start">Failed checks,</text>
+  <text x="217" y="379" class="edge start">budget remains</text>
+
+  <rect x="40" y="416" width="270" height="92" rx="10" class="software"/>
+  <text x="175" y="446" class="title">Validation and</text>
+  <text x="175" y="469" class="title">required checks</text>
+  <text x="175" y="492" class="tag software-tag">SOFTWARE</text>
+
+  <path d="M310 462H488" class="flow"/>
+  <text x="400" y="450" class="edge">Checks passed</text>
+
+  <!-- Review and publication -->
+  <rect x="490" y="434" width="270" height="56" rx="10" class="node"/>
+  <text x="625" y="468" class="title">Immutable review bundle</text>
+
+  <path d="M625 490V538" class="flow"/>
+
+  <rect x="490" y="540" width="270" height="68" rx="10" class="human"/>
+  <text x="625" y="570" class="title">Maintainer decision</text>
+  <text x="625" y="592" class="tag human-tag">HUMAN</text>
+
+  <path d="M625 608V676" class="flow"/>
+  <text x="611" y="647" class="edge end">Approval bound to this patch</text>
+
+  <rect x="490" y="678" width="270" height="68" rx="10" class="software"/>
+  <text x="625" y="708" class="title">Publisher</text>
+  <text x="625" y="730" class="tag software-tag">SOFTWARE</text>
+</svg>

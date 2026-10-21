@@ -1,29 +1,35 @@
 ---
 title: 'Risk and Judgement: A Pattern for Agentic System Design'
 description: >-
-  TODO: one or two lines. Shown in listings, meta tags, and the RSS feed.
+  How I decide what an agentic system hands to software, to a model, or to a
+  human: break the work into functions, then classify each by the judgement it
+  needs and the risk you can tolerate.
 pubDate: 2026-10-21
-tags: []
-draft: true
+tags: ['ai-engineering', 'agentic-workflows', 'software-architecture', 'security']
+draft: false
+heroImage: ../../assets/posts/risk-and-judgement-a-pattern-for-agentic-system-design.png
+heroImageAlt: 'Exposed gears, a glass-walled chamber of glowing linkages, and a hand-operated lever share one workbench: software, an agent, and a person each owning part of the work'
 ---
+
+import bugFixOwnershipFlow from '../../assets/posts/bug-fix-ownership-flow.svg';
 
 ## Is this thing on?
 
-I have a tendency to make assumptions about my target audience at times: *If this makes sense to me objectively, it must be true for everyone else, **right***? Well, I hate to break it to myself, but that is actually very rarely the case. This has been surfacing at a noticeable rate recently when I talk about my approaches to agentic system architecture.  Over the years, I've learned to start looking inward ("how am I miscommunicating this?") rather than outward ("how can they *not* understand this"?). 
+I have a tendency to make assumptions about my target audience at times: *If this makes sense to me objectively, it must be true for everyone else, **right***? Well, I hate to break it to myself, but that is actually very rarely the case. This has been surfacing at a noticeable rate recently when I talk about my approaches to agentic system architecture. Over the years, I've learned to start looking inward ("how am I miscommunicating this?") rather than outward ("how can they *not* understand this?").
 
-When developing an agentic system, the design approach that I've been taking has become a pattern loosely based on traditional threat modeling. To me, threat modeling makes sense to apply to agentic systems because unbounded agents have demonstrated the ability to act in an adversarial capacity.
+When developing an agentic system, the design approach that I've been taking has become a pattern loosely based on traditional threat modelling. To me, threat modelling makes sense to apply to agentic systems because I treat unbounded agents as potential adversaries to the system they're part of.
 
 This blog post is an attempt at describing the approach and proposing a reusable pattern when it comes to agentic development so we can start from the same fundamentals when speaking about more complex system implementations.
 
 ## What problem are we trying to solve?
 
-Ever since I first encountered my first instance of "Sorry, you're right. I should have...", I wondered how we would actually trust non-deterministic systems like LLMs in critical cases where we absolutely needed deterministic behaviour. I also grew in awe of the increasing number of seemingly deterministic bash scripts that were being encoded in prose fed to an LLM. Not only is it costly, but just because it's in prose, doesn't mean that the LLM is guaranteed to observe it. 
+Ever since I encountered my first instance of "Sorry, you're right. I should have...", I wondered how we would actually trust non-deterministic systems like LLMs in critical cases where we absolutely needed deterministic behaviour. I also grew in awe of the increasing number of seemingly deterministic bash scripts that were being encoded in prose fed to an LLM. Not only is it costly, but just because it's in prose doesn't mean that the LLM is guaranteed to observe it.
 
-This realization (and further research) led me to the conclusion that developing agentic systems against a spectrum of entirely deterministic to purely non-deterministic was the best way forward ([Stop Asking LLMs to be Deterministic](/posts/stop-asking-llms-to-be-deterministic)). The pattern proposed in this post clarifies my approach to determining what goes into software and what should be owned by an LLM. The overarching pillars of this design are trust and cost.
+This realization (and further research) led me to the conclusion that developing agentic systems against a spectrum from entirely deterministic to purely non-deterministic was the best way forward ([Stop Asking LLMs to be Deterministic](/posts/stop-asking-llms-to-be-deterministic)). The pattern proposed in this post clarifies my approach to determining what goes into software and what should be owned by an LLM. The overarching pillars of this design are trust and cost.
 
 ## Sketching it out
 
-When designing an agentic system, one of the first questions is: [who should own the control loop](/posts/the-division-of-the-local-harness/#who-owns-the-control-loop). Some functions require interpretation, investigation or adaptation. Others can follow explicit rules. Some mistakes are inexpensive and reversible. Others can cause a SEV-0 and impact customer trust. This is not a holistic classification, but rather a classification of each individual function that is required to achieve the holistic goal. They should influence how the division of responsibility is split between software, agents and humans.
+When designing an agentic system, one of the first questions is: [who should own the control loop](/posts/the-division-of-the-local-harnesses/#who-owns-the-control-loop). Some functions require interpretation, investigation or adaptation. Others can follow explicit rules. Some mistakes are inexpensive and reversible. Others can cause a SEV-0 and impact customer trust. This is not a holistic classification, but rather a classification of each individual function that is required to achieve the holistic goal. They should influence how the division of responsibility is split between software, agents and humans.
 
 A useful starting point is to decompose your problem into isolated functions. Take an automated bug fix as an example.
 
@@ -38,7 +44,7 @@ Decomposed:<br/>
   - Review and iterate on PR
   - Merge
 
-I also find it useful to distinguish between graph-based and imperative design, but that's not strictly necessary. This gives you a starting point for the system you're designing.
+This gives you a starting point for the system you're designing.
 
 Like traditional software development, the design process is iterative and should not be carved in stone. It should be iterated on as you collect real-world signals based on usage.
 
@@ -51,23 +57,27 @@ Decompose the work
   -> accept or revise
 ```
 
-The oucome of the this stage of the process is to have a clear picture of every logical function that we can then map the next stage against.
+The outcome of this stage of the process is to have a clear picture of every logical function that we can then map the next stage against.
 
 ### The axes of the agentic architecture model
 
-Now that I have the logical functions in my design fleshed out, I can use these two axes to determine whether each one will be owned by software or by the model:
+Now that I have the logical functions in my design fleshed out, I can use these two axes to determine who should own each one (software, a model, or a human):
 
 - **Judgement requirements**: Does this particular function require human-like judgement? Another way to think about this is: pre-LLMs, is this something that I would have automated in a script or something that would have genuinely needed me to complete?
 - **Risk**:
   - *Concerns*: What are the possible failures, the likelihood, their consequences and the resources exposed?
   - *Tolerance*: Are the concerns tolerable? Do we actually care?
 
+If you squint, the two axes are the two pillars. Judgement is about cost: if a function doesn't need it, an LLM is the expensive way to do it, in tokens, in latency, and in the odds that it ignores the instruction. Risk is about trust: how much of it you can afford to extend to this function.
+
 The two axes produce a useful matrix to assist in classifying each function:
 
-| | Low judgement requirement | High judgement requirement |
+| | Low judgement | High judgement |
 |---|---|---|
-| **Low tolerance for the relevant failure** | Use software to apply explicit rules and enforce constraints. | Let an agent contribute judgement within defined authority. Require verification or human decisions appropriate to the consequences. |
-| **Higher tolerance for the relevant failure** | Ordinary software will often remain the simplest choice. | Allow broader agent exploration or action within an agreed scope. |
+| **Low tolerance** | Software. Write the script and enforce the rules. | The agent contributes judgement inside hard limits, with verification or a human deciding before anything consequential happens. |
+| **High tolerance** | Still software. It's cheaper and more predictable than prose. | Let the agent explore within an agreed scope. |
+
+Notice the left column: if a function doesn't need judgement, the answer is software regardless of risk. Risk tolerance only decides how much rope the agent gets.
 
 ## Digging in
 
@@ -75,11 +85,13 @@ Now that we have the logical functions and the matrix to apply against each func
 
 ### Classify the function
 
-Use the above matrix to classify each step of the workflow between LLM and software ownership. In either case, a rough set of failure modes should be identified. This is intended to give you a rough idea about what could go wrong. It's not intended to be comprehensive because you're nearly *always* going to encounter unexpected failures.
+Use the above matrix to classify each step of the workflow between software, LLM and human ownership. In either case, a rough set of failure modes should be identified. This is intended to give you a rough idea about what could go wrong. It's not intended to be comprehensive because you're nearly *always* going to encounter unexpected failures.
 
-### LLM-owned threat modeling
+### LLM-owned threat modelling
 
-In the case of LLM-owned functionality, we need to understand what can go wrong and how it can possibly impact the entire system. Loosely using traditional threat modeling is a great tool for this. Models should be treated as adversarial actors. There's enough recent reported evidence to make this case without having to maintain a poker face. Useful question include:
+In the case of LLM-owned functionality, we need to understand what can go wrong and how it can possibly impact the entire system. Loosely using traditional threat modelling is a great tool for this. Models should be treated as adversarial actors. Not because they're malicious, but because anything that lands in their context (a test log, a README, a web page) can steer them, and you can't predict all of it. Adversarial is the safe default.
+
+Useful questions include:
 
 - What can this function read or change?
 - Who or what can influence its inputs?
@@ -90,13 +102,15 @@ In the case of LLM-owned functionality, we need to understand what can go wrong 
 
 Failures should be kept concrete. "The agent made a mistake" is too broad. "A misleading test log causes the agent to send credentials to an external service" gives the design something specific to address.
 
-### Establish tolerances, evaludate verification and remaining risk
+### Establish tolerances, evaluate verification and remaining risk
 
-As the system architects, you and your team are entirely in the driver's seat here. How much do you care if any one of failure modes or adversarial impacts occur? If LLM-owned, what limits do you want to impose on the model (tool, token, timeouts, etc)?
+As the system architects, you and your team are entirely in the driver's seat here. How much do you care if any of the failure modes or adversarial impacts occur? If LLM-owned, what limits do you want to impose on the model (tools, tokens, timeouts, etc.)?
 
-The act of establishing tolerances may also unearth other functions that need to be added to your system. For example: If a function is high risk but absolutely requires judgement, maybe a new LLM-based validation function needs to be added.
+A tolerance is only as good as your ability to enforce and verify it. For each check, be honest about what it establishes and what it misses. A passing test suite provides evidence that the behaviours it exercises work. It says considerably less about requirements nobody wrote down. And the model telling you it's done isn't verification: anything consequential needs a basis beyond the agent declaring its own success. If your checks can't establish what you need, narrow the scope, add a control, or hand the decision to a human.
 
-The point of this stage is to identify risks concerns and tolerances and mitigation plans depending on the classification.
+The act of establishing tolerances may also unearth other functions that need to be added to your system. For example: if a function is high risk but absolutely requires judgement, you might add a second LLM-based function to review the first. That can catch some mistakes, but it's still a model checking a model. It shouldn't be the only thing standing between a low-tolerance failure and production. Pair it with deterministic checks or a human decision.
+
+The point of this stage is to identify risk concerns, tolerances and mitigation plans depending on the classification.
 
 ### Propose an allocation of authority and controls
 
@@ -110,16 +124,41 @@ An agent might propose a patch or write the code. Software might check its permi
 
 The point here is to ensure that the correct guardrail owners are in place for each function.
 
+## Putting it together: fixing a bug
+
+Back to the bug fix from earlier. Run each function through the matrix and it looks something like this:
+
+| Function | Judgement | Tolerance | Owner | Controls |
+|---|---|---|---|---|
+| Clone the target repo | Low | Low | Software | Validates the repo and base revision; clones into an isolated workspace |
+| Investigate the bug | High | High, within budget | Agent | Tool, token and time budgets; no credentials; no outbound network |
+| Propose or make the fix | High | High in the workspace, none outside it | Agent | Can only write to the isolated workspace |
+| Run static analysis | Low | Low | Software | Configuration lives outside the agent's reach |
+| Execute runtime QA | High | Low | Agent owns the loop, a human gets the [last word](/posts/runtime-qa-give-the-agent-the-loop-not-the-last-word) | Consequential actions need approval |
+| Push a PR | Low | Low | Software | Only software holds push credentials, and it pushes the exact patch that passed |
+| Review and iterate on PR | High | Medium | Agent proposes, human reviews | Every iteration goes back through static analysis and QA |
+| Merge | High | Low | Human decides, software executes | Approval is bound to the exact commit; any change needs fresh approval |
+
+As a flow, it looks like this:
+
+<img
+  src={bugFixOwnershipFlow.src}
+  alt="A bug report reaches software, which clones the target repo and gives an isolated workspace, with no credentials and no network, its scope and budget. The agent investigates and fixes the bug, exchanging evidence, test requests and results with the workspace. Its candidate patch goes to software static analysis, and findings return to the agent while budget remains. Once checks pass, the agent explores in runtime QA and a human decides. After sign-off, software pushes a PR. In review, the agent proposes and a human reviews, and revisions re-run the checks. With approval bound to the commit, a human decides to merge and software executes it."
+  width={800}
+  height={910}
+/>
+
+Then try to break it:
+
+- A test log tells the agent to upload environment variables. It might even try, but there's nothing to upload and nowhere to send it.
+- The agent burns through its budget. The next tool call is refused, and restarting doesn't reset the clock.
+- The PR changes after it's approved. The approval no longer applies.
+- A plausible but wrong patch passes every test. Our automated checks haven't established enough confidence to permit an autonomous merge, so a human retains that decision.
+
 ## Repeat as the design changes
 
-Architecture changes over time. Using this same process iteratively can help ensure that overall approaches to agentic system architecture are consistent.
+Architecture changes over time, and so do models, tools and the risks you're willing to accept. Revisit the classification when any of them move. A reliable diagnostic rule might pull a function back into software. Stronger acceptance checks might let an agent own more of the loop. Automatic merging would introduce consequences that need tighter boundaries.
 
-{/*
-  Available components — import at the top of the file, then use inline:
+At the end of the day, you may find that your system belongs entirely in a prose-based skill. You may find that you don't even need an LLM at all. Or, you may find that a hybrid architecture suits the system best, whether software or an LLM owns the top-level control loop. Regardless, you'll have made deliberate architectural decisions, thought through potential failure modes and established boundaries to reduce the odds of unintentionally unleashing a swarm of rogue agents across the interwebs.
 
-    import Callout from '../../components/Callout.astro';
-    import Terminal from '../../components/Terminal.astro';
-
-    <Callout type="info|warn|danger|success">…</Callout>
-    <Terminal title="zsh"> fenced console block </Terminal>
-*/}
+Running the same process every time also gives you and your team a shared vocabulary: which functions need judgement, what you're willing to tolerate, and who gets to propose, decide and execute. That's the conversation I've been fumbling lately. Hopefully this makes it a little easier to have.
