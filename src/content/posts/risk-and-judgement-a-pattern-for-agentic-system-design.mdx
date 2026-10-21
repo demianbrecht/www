@@ -1,0 +1,125 @@
+---
+title: 'Risk and Judgement: A Pattern for Agentic System Design'
+description: >-
+  TODO: one or two lines. Shown in listings, meta tags, and the RSS feed.
+pubDate: 2026-10-21
+tags: []
+draft: true
+---
+
+## Is this thing on?
+
+I have a tendency to make assumptions about my target audience at times: *If this makes sense to me objectively, it must be true for everyone else, **right***? Well, I hate to break it to myself, but that is actually very rarely the case. This has been surfacing at a noticeable rate recently when I talk about my approaches to agentic system architecture.  Over the years, I've learned to start looking inward ("how am I miscommunicating this?") rather than outward ("how can they *not* understand this"?). 
+
+When developing an agentic system, the design approach that I've been taking has become a pattern loosely based on traditional threat modeling. To me, threat modeling makes sense to apply to agentic systems because unbounded agents have demonstrated the ability to act in an adversarial capacity.
+
+This blog post is an attempt at describing the approach and proposing a reusable pattern when it comes to agentic development so we can start from the same fundamentals when speaking about more complex system implementations.
+
+## What problem are we trying to solve?
+
+Ever since I first encountered my first instance of "Sorry, you're right. I should have...", I wondered how we would actually trust non-deterministic systems like LLMs in critical cases where we absolutely needed deterministic behaviour. I also grew in awe of the increasing number of seemingly deterministic bash scripts that were being encoded in prose fed to an LLM. Not only is it costly, but just because it's in prose, doesn't mean that the LLM is guaranteed to observe it. 
+
+This realization (and further research) led me to the conclusion that developing agentic systems against a spectrum of entirely deterministic to purely non-deterministic was the best way forward ([Stop Asking LLMs to be Deterministic](/posts/stop-asking-llms-to-be-deterministic)). The pattern proposed in this post clarifies my approach to determining what goes into software and what should be owned by an LLM. The overarching pillars of this design are trust and cost.
+
+## Sketching it out
+
+When designing an agentic system, one of the first questions is: [who should own the control loop](/posts/the-division-of-the-local-harness/#who-owns-the-control-loop). Some functions require interpretation, investigation or adaptation. Others can follow explicit rules. Some mistakes are inexpensive and reversible. Others can cause a SEV-0 and impact customer trust. This is not a holistic classification, but rather a classification of each individual function that is required to achieve the holistic goal. They should influence how the division of responsibility is split between software, agents and humans.
+
+A useful starting point is to decompose your problem into isolated functions. Take an automated bug fix as an example.
+
+High level: *Fix this bug* <br/>
+Decomposed:<br/>
+  - Clone the target repo
+  - Investigate the bug
+  - Propose or make the fix
+  - Run static analysis
+  - Execute runtime QA
+  - Push a PR
+  - Review and iterate on PR
+  - Merge
+
+I also find it useful to distinguish between graph-based and imperative design, but that's not strictly necessary. This gives you a starting point for the system you're designing.
+
+Like traditional software development, the design process is iterative and should not be carved in stone. It should be iterated on as you collect real-world signals based on usage.
+
+```
+Decompose the work
+  -> identify judgement requirements and possible failures
+  -> establish tolerances
+  -> propose an allocation and controls
+  -> evaluate verification and remaining risk
+  -> accept or revise
+```
+
+The oucome of the this stage of the process is to have a clear picture of every logical function that we can then map the next stage against.
+
+### The axes of the agentic architecture model
+
+Now that I have the logical functions in my design fleshed out, I can use these two axes to determine whether each one will be owned by software or by the model:
+
+- **Judgement requirements**: Does this particular function require human-like judgement? Another way to think about this is: pre-LLMs, is this something that I would have automated in a script or something that would have genuinely needed me to complete?
+- **Risk**:
+  - *Concerns*: What are the possible failures, the likelihood, their consequences and the resources exposed?
+  - *Tolerance*: Are the concerns tolerable? Do we actually care?
+
+The two axes produce a useful matrix to assist in classifying each function:
+
+| | Low judgement requirement | High judgement requirement |
+|---|---|---|
+| **Low tolerance for the relevant failure** | Use software to apply explicit rules and enforce constraints. | Let an agent contribute judgement within defined authority. Require verification or human decisions appropriate to the consequences. |
+| **Higher tolerance for the relevant failure** | Ordinary software will often remain the simplest choice. | Allow broader agent exploration or action within an agreed scope. |
+
+## Digging in
+
+Now that we have the logical functions and the matrix to apply against each function for classification, we go ahead with that stage of the design. While working through each function, you may very well find that the function itself is too broad and needs to be exploded for further analysis.
+
+### Classify the function
+
+Use the above matrix to classify each step of the workflow between LLM and software ownership. In either case, a rough set of failure modes should be identified. This is intended to give you a rough idea about what could go wrong. It's not intended to be comprehensive because you're nearly *always* going to encounter unexpected failures.
+
+### LLM-owned threat modeling
+
+In the case of LLM-owned functionality, we need to understand what can go wrong and how it can possibly impact the entire system. Loosely using traditional threat modeling is a great tool for this. Models should be treated as adversarial actors. There's enough recent reported evidence to make this case without having to maintain a poker face. Useful question include:
+
+- What can this function read or change?
+- Who or what can influence its inputs?
+- What happens if the output is wrong?
+- Could an apparently harmless output trigger a consequential action elsewhere?
+- How quickly would a failure be detected?
+- How reversible are its effects?
+
+Failures should be kept concrete. "The agent made a mistake" is too broad. "A misleading test log causes the agent to send credentials to an external service" gives the design something specific to address.
+
+### Establish tolerances, evaludate verification and remaining risk
+
+As the system architects, you and your team are entirely in the driver's seat here. How much do you care if any one of failure modes or adversarial impacts occur? If LLM-owned, what limits do you want to impose on the model (tool, token, timeouts, etc)?
+
+The act of establishing tolerances may also unearth other functions that need to be added to your system. For example: If a function is high risk but absolutely requires judgement, maybe a new LLM-based validation function needs to be added.
+
+The point of this stage is to identify risks concerns and tolerances and mitigation plans depending on the classification.
+
+### Propose an allocation of authority and controls
+
+Identify who may:
+
+- **Propose**: Generate a hypothesis, recommendation or candidate action
+- **Decide**: Determine whether it should proceed
+- **Execute**: Produce the external effect
+
+An agent might propose a patch or write the code. Software might check its permitted paths and run required tests. A human might accept the associated PR and merge it into the system.
+
+The point here is to ensure that the correct guardrail owners are in place for each function.
+
+## Repeat as the design changes
+
+Architecture changes over time. Using this same process iteratively can help ensure that overall approaches to agentic system architecture are consistent.
+
+{/*
+  Available components — import at the top of the file, then use inline:
+
+    import Callout from '../../components/Callout.astro';
+    import Terminal from '../../components/Terminal.astro';
+
+    <Callout type="info|warn|danger|success">…</Callout>
+    <Terminal title="zsh"> fenced console block </Terminal>
+*/}
