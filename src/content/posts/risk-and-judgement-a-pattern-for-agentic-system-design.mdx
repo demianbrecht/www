@@ -12,6 +12,7 @@ heroImageAlt: 'Exposed gears, a glass-walled chamber of glowing linkages, and a 
 ---
 
 import bugFixOwnershipFlow from '../../assets/posts/bug-fix-ownership-flow.svg';
+import Callout from '../../components/Callout.astro';
 
 ## Is this thing on?
 
@@ -51,9 +52,9 @@ Like traditional software development, the design process is iterative and shoul
 ```
 Decompose the work
   -> identify judgement requirements and possible failures
-  -> establish tolerances
+  -> establish tolerances and verification
   -> propose an allocation and controls
-  -> evaluate verification and remaining risk
+  -> evaluate workflow composition and residual risk
   -> accept or revise
 ```
 
@@ -102,7 +103,7 @@ Useful questions include:
 
 Failures should be kept concrete. "The agent made a mistake" is too broad. "A misleading test log causes the agent to send credentials to an external service" gives the design something specific to address.
 
-### Establish tolerances, evaluate verification and remaining risk
+### Establish tolerances and verification
 
 As the system architects, you and your team are entirely in the driver's seat here. How much do you care if any of the failure modes or adversarial impacts occur? If LLM-owned, what limits do you want to impose on the model (tools, tokens, timeouts, etc.)?
 
@@ -123,6 +124,28 @@ Identify who may:
 An agent might propose a patch or write the code. Software might check its permitted paths and run required tests. A human might accept the associated PR and merge it into the system.
 
 The point here is to ensure that the correct guardrail owners are in place for each function.
+
+### Evaluate the composition
+
+Applying the matrix against individual functions is a great starting point for your system. It helps you decide on an implementation strategy for each. However, it doesn't necessarily account for interactions between functions, which is where new risks can emerge.
+
+As a concrete example, let's take another look at three functions of our bug-fix workflow: investigate the bug, make the fix and push a PR. In isolation, these might look fine. The agent investigates and makes changes within its isolated workspace, while software validates the patch and handles pushing the PR. Each function has its own boundaries and controls.
+
+But what if your service depends on an open-source package and the fix needs to be contributed upstream? The agent takes a ticket from an internal work tracker as context, investigates the bug and makes the fix. Software validates the patch and pushes a PR to the public repository.
+
+What happens if the patch or PR description contains information from the internal ticket? You've potentially just leaked internal company information into a public repository. Not a great place to be.
+
+Remember that the agent doesn't have any network access, so it can't send anything out on its own. But it doesn't really need to, because software will happily push whatever the agent wrote. And while there's a human sign-off before the push, that human was signing off on runtime QA, not on what's in the PR description. By the time a human gets around to reviewing the PR, the information is already public.
+
+In this case, none of the individual functions necessarily violated their assigned boundaries. The failure was in how they were composed.
+
+So while individual functions are useful for classification and identifying failure modes, we also need to evaluate the workflow as a whole. This is basically the "could an apparently harmless output trigger a consequential action elsewhere?" question from earlier, just applied to the entire workflow. What information and authority move between functions? Could a series of otherwise acceptable operations produce an outcome we're not willing to tolerate?
+
+If the composition introduces new risks, we need to revisit our classifications, tolerances and controls. In this example, pushing a PR to a public repo isn't really a low judgement function anymore. Someone needs to decide whether the content is safe to publish, and our tolerance for getting that wrong is pretty much zero. Software can scan for the obvious things like ticket IDs, but a human should be looking at what's actually going out before it goes public. Even better, if the work is going upstream, maybe the agent doesn't need the internal ticket at all.
+
+
+
+Whatever risk is left after that is the residual risk that you're accepting (or not) in the last step.
 
 ## Putting it together: fixing a bug
 
@@ -150,10 +173,11 @@ As a flow, it looks like this:
 
 Then try to break it:
 
-- A test log tells the agent to upload environment variables. It might even try, but there's nothing to upload and nowhere to send it.
+- A test log tells the agent to upload environment variables. It might even try, but there's nothing to upload and no network to send it over.
 - The agent burns through its budget. The next tool call is refused, and restarting doesn't reset the clock.
 - The PR changes after it's approved. The approval no longer applies.
 - A plausible but wrong patch passes every test. Our automated checks haven't established enough confidence to permit an autonomous merge, so a human retains that decision.
+- The PR description for an upstream fix quotes the internal ticket. Software catches the ticket ID, and even if it didn't, a human reviews it before it goes public.
 
 ## Repeat as the design changes
 
@@ -162,3 +186,8 @@ Architecture changes over time, and so do models, tools and the risks you're wil
 At the end of the day, you may find that your system belongs entirely in a prose-based skill. You may find that you don't even need an LLM at all. Or, you may find that a hybrid architecture suits the system best, whether software or an LLM owns the top-level control loop. Regardless, you'll have made deliberate architectural decisions, thought through potential failure modes and established boundaries to reduce the odds of unintentionally unleashing a swarm of rogue agents across the interwebs.
 
 Running the same process every time also gives you and your team a shared vocabulary: which functions need judgement, what you're willing to tolerate, and who gets to propose, decide and execute. That's the conversation I've been fumbling lately. Hopefully this makes it a little easier to have.
+
+
+<hr/>
+## Changes
+- Update (Oct 23): [Evaluate the composition](#evaluate-the-composition) was prompted by a comment from [Muhammad Haziq on LinkedIn](https://lnkd.in/p/gyTysXhY). I’d touched on downstream effects earlier in the article, but hadn’t explicitly addressed evaluating the composition of the workflow. Good catch, and thanks for pointing it out.
